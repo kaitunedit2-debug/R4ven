@@ -37,18 +37,18 @@ getgenv().ESP = {
             Enabled = true,
             LocalPlayer = true,
 
-            Font = "Tahoma",
+            Font = "Minecraftia",
             FontSize = 12,
-            FontType = "lowercase", -- uppercase, lowercase, none
+            FontType = "lowercase",
 
             MaxDistance = math.huge,
             RefreshRate = 60,
 
             BoundingBox = {
                 Enabled = true,
-                DynamicBox = true, -- may drop fps
+                DynamicBox = true,
                 IncludeAccessories = false,
-                Type = "2D", -- 2D, Corner
+                Type = "2D",
                 
                 Rotation = 90,
                 Color = {Color3_fromRGB(216, 126, 157), Color3_fromRGB(216, 126, 157)},
@@ -77,28 +77,24 @@ getgenv().ESP = {
 
                     Type = function(Player, CharacterObjects)
                         if not IsA(Player, "Player") then return end
-
                         local Humanoid = CharacterObjects.Humanoid
                         if not Humanoid then return end
-
-                        return Humanoid.Health / Humanoid.MaxHealth -- what value the bar follows
+                        return Humanoid.Health / Humanoid.MaxHealth
                     end,
 
                     Text = {
                         Enabled = true,
                         FollowBar = true,
                         Ending = "",
-                        Position = "Left", -- // will ignore if FollowBar is true
+                        Position = "Left",
                         Color = Color3_fromRGB(255, 255, 255),
                         Transparency = 0,
 
                         Type = function(Player, CharacterObjects)
                             if not IsA(Player, "Player") then return end
-
                             local Humanoid = CharacterObjects.Humanoid
                             if not Humanoid then return end
-
-                            return Humanoid.Health, Humanoid.Health ~= Humanoid.MaxHealth -- Value the text follows, Value the text turns visible if follow bar is on
+                            return Humanoid.Health, Humanoid.Health ~= Humanoid.MaxHealth
                         end,
                     },
                 },
@@ -110,28 +106,24 @@ getgenv().ESP = {
 
                     Type = function(Player, CharacterObjects)
                         if not IsA(Player, "Player") then return end
-
                         local Humanoid = CharacterObjects.Humanoid
-                            if not Humanoid then return end
-
-                        return Humanoid.Health / Humanoid.MaxHealth -- what value the bar follows
+                        if not Humanoid then return end
+                        return Humanoid.Health / Humanoid.MaxHealth
                     end,
 
                     Text = {
                         Enabled = true,
                         FollowBar = true,
                         Ending = "%",
-                        Position = "Left", -- // will ignore if FollowBar is true
+                        Position = "Left",
                         Color = Color3_fromRGB(255, 255, 255),
                         Transparency = 0,
 
                         Type = function(Player, CharacterObjects)
                             if not IsA(Player, "Player") then return end
-
                             local Humanoid = CharacterObjects.Humanoid
                             if not Humanoid then return end
-
-                            return Humanoid.Health, Humanoid.Health ~= Humanoid.MaxHealth -- Value the text follows, value the text turns visible if follow bar is on
+                            return Humanoid.Health, Humanoid.Health ~= Humanoid.MaxHealth
                         end,
                     },
                 },
@@ -175,21 +167,12 @@ getgenv().ESP = {
 
                 Type = function(Player, CharacterObjects)
                     local Flags = {}
-
                     if not IsA(Player, "Player") then return Flags end
-
                     local Humanoid = CharacterObjects.Humanoid
                     if not Humanoid then return end
-
-                    if Humanoid.MoveDirection.Magnitude > 0 then
-                        table_insert(Flags, "moving")
-                    end
-
-                    if Humanoid.Jump then
-                        table_insert(Flags, "jumping")
-                    end
-
-                    return Flags -- return a table for it to work
+                    if Humanoid.MoveDirection.Magnitude > 0 then table_insert(Flags, "moving") end
+                    if Humanoid.Jump then table_insert(Flags, "jumping") end
+                    return Flags
                 end
             },
         },
@@ -224,13 +207,8 @@ do
     local baseFolder = P(FolderLocation)
     local fontsFolder = P(FolderLocation .. "/Fonts")
 
-    if not isfolder(baseFolder) then
-        makefolder(baseFolder)
-    end
-
-    if not isfolder(fontsFolder) then
-        makefolder(fontsFolder)
-    end
+    if not isfolder(baseFolder) then makefolder(baseFolder) end
+    if not isfolder(fontsFolder) then makefolder(fontsFolder) end
 end
 
 local FontsToDownload = {
@@ -260,7 +238,6 @@ do -- Fonts
                     assetId = getcustomasset(ttfPath)
                 }}
             }
-
             pcall(writefile, fontPath, HttpService:JSONEncode(Config))
         end
     end
@@ -272,19 +249,15 @@ do -- Fonts
 
         for _, FontPath in listfiles(fontsFolder) do
             FontPath = P(FontPath)
-
-           local Name = string_match(FontPath, fontsFolder .. "/(.+)%.font")
-              if Name then
-    local ok, asset = pcall(getcustomasset, FontPath)
-
-    if ok then
-        Fonts.Loaded[Name] = Font_new(asset, Enum.FontWeight.Regular)
-    else
-        -- fall back cause shit mobile noobs
-        Fonts.Loaded[Name] = Font_new(Enum.Font.SourceSans, Enum.FontWeight.Regular)
-    end
-end
-
+            local Name = string_match(FontPath, fontsFolder .. "/(.+)%.font")
+            if Name then
+                local ok, asset = pcall(getcustomasset, FontPath)
+                if ok then
+                    Fonts.Loaded[Name] = Font_new(asset, Enum.FontWeight.Regular)
+                else
+                    Fonts.Loaded[Name] = Font_new(Enum.Font.SourceSans, Enum.FontWeight.Regular)
+                end
+            end
         end
     end
 end
@@ -294,41 +267,26 @@ local Utility = {}; do
     function Utility.AddConnection(Signal, Function)
         local Connection = Signal:Connect(function(...)
             local Args = {...}
-            
             local Success, Message = pcall(function() coroutine_wrap(Function)(table_unpack(Args)) end)
-            
             if not Success and not ESPErrors[Message] then
                 local ErrorMessage = string_format("[ERROR] | An error has occured:\n%s", Message)
-
                 warn(ErrorMessage)
-                
                 ESPErrors[Message] = Message
-                
-                if ConnectionsTable[Connection] then
-                    ConnectionsTable[Connection] = nil
-                end
-                
+                if ConnectionsTable[Connection] then ConnectionsTable[Connection] = nil end
                 return Connection and Connection:Disconnect()
             end
         end)
-        
-        if Connection and ConnectionsTable then
-            table_insert(ConnectionsTable, Connection)
-        end
-        
+        if Connection and ConnectionsTable then table_insert(ConnectionsTable, Connection) end
         return Connection
     end
 
     function Utility.CreateObject(Type, Properties, Hidden)
         local Hidden = Hidden or false
         local Object = Instance_new(Type)
-
         for Index, Value in Properties do
             Object[Index] = Value
         end
-
         table_insert(ObjectsTable, Object)
-
         return Object
     end
 
@@ -352,10 +310,8 @@ local Utility = {}; do
                         PartCFrame * Vector3_new(PartSize.X / 2, -PartSize.Y / 2, -PartSize.Z / 2),
                         PartCFrame * Vector3_new(-PartSize.X / 2, -PartSize.Y / 2, -PartSize.Z / 2),
                     }
-
                     for _, Corner in Corners do
                         local ScreenPosition, OnScreen = WorldToViewportPoint(Camera, Corner)
-
                         MinX = math_min(MinX, ScreenPosition.X)
                         MinY = math_min(MinY, ScreenPosition.Y)
                         MaxX = math_max(MaxX, ScreenPosition.X)
@@ -363,77 +319,38 @@ local Utility = {}; do
                     end
                 end
             end
-            
             BoxWidth, BoxHeight = MaxX - MinX, MaxY - MinY
         else
             local Scale = (RootPart.Size.Y * Camera.ViewportSize.Y) / (Position.Z * 2)
-
             BoxWidth, BoxHeight = 3 * Scale, 4.5 * Scale
             MinX, MinY = Position.X - (BoxWidth / 2), Position.Y - (BoxHeight / 2)
         end
-
         return BoxWidth, BoxHeight, MinX, MinY, OnScreen
     end
 
     function Utility.GetFontType(ESPSettings, Text)
         local FontType = string_lower(ESPSettings.FontType)
-
-        if FontType == "uppercase" then
-            return string_upper(Text)
-        elseif FontType == "lowercase" then
-            return string_lower(Text)
-        else
-            return Text
-        end
+        if FontType == "uppercase" then return string_upper(Text)
+        elseif FontType == "lowercase" then return string_lower(Text)
+        else return Text end
     end
 end
 
 local PlayerHelper = {}; do
     function PlayerHelper.GetCharacter(Player)
         if not Player then return nil end
-        
-        local Character = Player.Character
-
-        --[[
-            if CurrentGame == "Phantom Forces" then
-                Character = ...
-            elseif CurrentGame == "Bad Business" then
-                Character = ...
-            end
-        ]]
-
-        return Character
+        return Player.Character
     end
-
     function PlayerHelper.GetChildren(Character)
         if not Character then return {} end
-        
-        local Children = Character:GetChildren()
-
-        return Children
+        return Character:GetChildren()
     end
-
     function PlayerHelper.GetDescendants(Character)
         if not Character then return {} end
-        
-        local Descendants = Character:GetDescendants()
-
-        return Descendants
+        return Character:GetDescendants()
     end
-
     function PlayerHelper.GetTool(Player)
         if not Player then return nil end
-        
-        --[[
-            return nil to use the default way (connections)
-
-            if CurrentGame == "Phantom Forces" then
-                return ...
-            elseif CurrentGame == "Bad Business" then
-                return ...
-            end 
-        ]]
-
         return nil
     end
 end
@@ -449,13 +366,10 @@ do -- Functions
     local Layout = {
         {UDim2_new(0, -1, 0, -1), UDim2_new(0.3, 0, 0, 1), Vector2_new(0, 0), 0},
         {UDim2_new(0, -1, 0, -1), UDim2_new(0, 1, 0.3, 0), Vector2_new(0, 0), 180},
-
         {UDim2_new(1, 1, 0, -1), UDim2_new(0.3, 0, 0, 1), Vector2_new(1, 0), 0},
         {UDim2_new(1, 1, 0, -1), UDim2_new(0, 1, 0.3, 0), Vector2_new(1, 0), 180},
-
         {UDim2_new(0, -1, 1, 1), UDim2_new(0.3, 0, 0, 1), Vector2_new(0, 1), 0},
         {UDim2_new(0, -1, 1, 1), UDim2_new(0, 1, 0.3, 0), Vector2_new(0, 1), -180},
-
         {UDim2_new(1, 1, 1, 1), UDim2_new(0.3, 0, 0, 1), Vector2_new(1, 1), 0},
         {UDim2_new(1, 1, 1, 1), UDim2_new(0, 1, 0.3, 0), Vector2_new(1, 1), -180},
     }
@@ -515,7 +429,6 @@ do -- Functions
                         CharacterObjects.Humanoid = WaitForChild(Character, "Humanoid", 10)
                         CharacterObjects.Children = PlayerHelper.GetChildren(Character)
                         CharacterObjects.Descendants = PlayerHelper.GetDescendants(Character)
-
                         local Highlight = Objects["Highlight"]; do
                             Highlight.Adornee = CharacterObjects.Character
                         end
@@ -523,15 +436,10 @@ do -- Functions
 
                     if CharacterObjects.Character then
                         ToolConnection.Added = Utility.AddConnection(CharacterObjects.Character.ChildAdded, function(Child)
-                            if IsA(Child, "Tool") then 
-                                TargetInfo.CurrentTool = Child.Name
-                            end 
+                            if IsA(Child, "Tool") then TargetInfo.CurrentTool = Child.Name end 
                         end)
-                        
                         ToolConnection.Removed = Utility.AddConnection(CharacterObjects.Character.ChildRemoved, function(Child)
-                            if IsA(Child, "Tool") then 
-                                TargetInfo.CurrentTool = "none"
-                            end 
+                            if IsA(Child, "Tool") then TargetInfo.CurrentTool = "none" end 
                         end)
                     end
                 end
@@ -603,9 +511,8 @@ do -- Functions
                     Objects["BoxFillGradient"] = Utility.CreateObject("UIGradient", {Parent = Objects["BoxFill"], Rotation = 90, Color = ColorSequence_new{ColorSequenceKeypoint_new(0, Color3_fromRGB(0, 0, 0)), ColorSequenceKeypoint_new(1, Color3_fromRGB(255, 255, 255))}, Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, 1), NumberSequenceKeypoint_new(1, 1)}})
                 end
 
-                do -- ConerBox
+                do -- CornerBox
                     Objects["CornerHolder"] = Utility.CreateObject("Frame", {Parent = Objects["BoxGlow"], Visible = false, BackgroundTransparency = 1, Position = UDim2_new(0, -1, 0, -1), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
-
                     for i = 1, 8 do
                         Objects["Line_" .. i] = Utility.CreateObject("Frame", {Parent = Objects["CornerHolder"], Visible = false, BackgroundTransparency = 0, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
                         Utility.CreateObject("UIStroke", {Parent = Objects["Line_" .. i], Thickness = 1, LineJoinMode = Enum.LineJoinMode.Miter})
@@ -621,86 +528,41 @@ do -- Functions
                         Objects[BarName .. "Gradient"] = Utility.CreateObject("UIGradient", {Parent = Objects[BarName], Rotation = 90, Color = ColorSequence_new{ColorSequenceKeypoint_new(0, Color3_fromRGB(0, 0, 0)), ColorSequenceKeypoint_new(0, Color3_fromRGB(0, 0, 0)), ColorSequenceKeypoint_new(1, Color3_fromRGB(255, 255, 255))}, Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, 0), NumberSequenceKeypoint_new(1, 0)}})
                     
                         Objects[BarName .. "Text"] = Utility.CreateObject("TextLabel", {
-                            Parent = Objects[Bar.Position .. "TextHolder"],
-                            FontFace = ESPFont,
-                            TextSize = ESPFontSize,
-                            LayoutOrder = 2,
-                            TextColor3 = Color3_fromRGB(255, 255, 255),
-                            Text = "",
-                            AnchorPoint = Vector2_new(0, 1),
-                            BorderSizePixel = 0,
-                            Visible = false,
-                            BackgroundTransparency = 1,
-                            ZIndex = 5,
-                            AutomaticSize = Enum.AutomaticSize.Y,
-                            Size = UDim2_new(1, 0, 0, 0)
+                            Parent = Objects[Bar.Position .. "TextHolder"], FontFace = ESPFont, TextSize = ESPFontSize, LayoutOrder = 2,
+                            TextColor3 = Color3_fromRGB(255, 255, 255), Text = "", AnchorPoint = Vector2_new(0, 1),
+                            BorderSizePixel = 0, Visible = false, BackgroundTransparency = 1, ZIndex = 5,
+                            AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2_new(1, 0, 0, 0)
                         }); Utility.CreateObject("UIStroke", {Parent = Objects[BarName .. "Text"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
                     end
                 end
 
                 do -- Texts
                     Objects["TargetName"] = Utility.CreateObject("TextLabel", {
-                        Parent = Objects["TopTextHolder"],
-                        FontFace = ESPFont,
-                        TextSize = ESPFontSize,
-                        LayoutOrder = 2,
-                        TextColor3 = Color3_fromRGB(255, 255, 255),
-                        Text = "",
-                        AnchorPoint = Vector2_new(0, 1),
-                        BorderSizePixel = 0,
-                        Visible = false,
-                        BackgroundTransparency = 1,
-                        ZIndex = 5,
-                        AutomaticSize = Enum.AutomaticSize.Y,
-                        Size = UDim2_new(1, 0, 0, 0)
+                        Parent = Objects["TopTextHolder"], FontFace = ESPFont, TextSize = ESPFontSize, LayoutOrder = 2,
+                        TextColor3 = Color3_fromRGB(255, 255, 255), Text = "", AnchorPoint = Vector2_new(0, 1),
+                        BorderSizePixel = 0, Visible = false, BackgroundTransparency = 1, ZIndex = 5,
+                        AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2_new(1, 0, 0, 0)
                     }); Utility.CreateObject("UIStroke", {Parent = Objects["TargetName"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
 
                     Objects["Distance"] = Utility.CreateObject("TextLabel", {
-                        Parent = Objects["BottomTextHolder"],
-                        FontFace = ESPFont,
-                        TextSize = ESPFontSize,
-                        LayoutOrder = 2,
-                        TextColor3 = Color3_fromRGB(255, 255, 255),
-                        Text = "",
-                        AnchorPoint = Vector2_new(0, 1),
-                        BorderSizePixel = 0,
-                        Visible = false,
-                        BackgroundTransparency = 1,
-                        ZIndex = 5,
-                        AutomaticSize = Enum.AutomaticSize.Y,
-                        Size = UDim2_new(1, 0, 0, 0)
+                        Parent = Objects["BottomTextHolder"], FontFace = ESPFont, TextSize = ESPFontSize, LayoutOrder = 2,
+                        TextColor3 = Color3_fromRGB(255, 255, 255), Text = "", AnchorPoint = Vector2_new(0, 1),
+                        BorderSizePixel = 0, Visible = false, BackgroundTransparency = 1, ZIndex = 5,
+                        AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2_new(1, 0, 0, 0)
                     }); Utility.CreateObject("UIStroke", {Parent = Objects["Distance"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
 
                     Objects["Flags"] = Utility.CreateObject("TextLabel", {
-                        Parent = Objects["RightTextHolder"],
-                        FontFace = ESPFont,
-                        TextSize = ESPFontSize,
-                        LayoutOrder = 2,
-                        TextColor3 = Color3_fromRGB(255, 255, 255),
-                        Text = "",
-                        AnchorPoint = Vector2_new(0, 1),
-                        BorderSizePixel = 0,
-                        Visible = false,
-                        BackgroundTransparency = 1,
-                        ZIndex = 5,
-                        AutomaticSize = Enum.AutomaticSize.Y,
-                        Size = UDim2_new(1, 0, 0, 0)
+                        Parent = Objects["RightTextHolder"], FontFace = ESPFont, TextSize = ESPFontSize, LayoutOrder = 2,
+                        TextColor3 = Color3_fromRGB(255, 255, 255), Text = "", AnchorPoint = Vector2_new(0, 1),
+                        BorderSizePixel = 0, Visible = false, BackgroundTransparency = 1, ZIndex = 5,
+                        AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2_new(1, 0, 0, 0)
                     }); Utility.CreateObject("UIStroke", {Parent = Objects["Flags"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
 
                     Objects["Weapon"] = Utility.CreateObject("TextLabel", {
-                        Parent = Objects["BottomTextHolder"],
-                        FontFace = ESPFont,
-                        TextSize = ESPFontSize,
-                        LayoutOrder = 2,
-                        TextColor3 = Color3_fromRGB(255, 255, 255),
-                        Text = "none",
-                        AnchorPoint = Vector2_new(0, 1),
-                        BorderSizePixel = 0,
-                        Visible = false,
-                        BackgroundTransparency = 1,
-                        ZIndex = 5,
-                        AutomaticSize = Enum.AutomaticSize.Y,
-                        Size = UDim2_new(1, 0, 0, 0)
+                        Parent = Objects["BottomTextHolder"], FontFace = ESPFont, TextSize = ESPFontSize, LayoutOrder = 2,
+                        TextColor3 = Color3_fromRGB(255, 255, 255), Text = "none", AnchorPoint = Vector2_new(0, 1),
+                        BorderSizePixel = 0, Visible = false, BackgroundTransparency = 1, ZIndex = 5,
+                        AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2_new(1, 0, 0, 0)
                     }); Utility.CreateObject("UIStroke", {Parent = Objects["Weapon"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
                 end
 
@@ -717,13 +579,11 @@ do -- Functions
 
                 if #CharacterObjects.Children ~= #CurrentChildren then
                     CharacterObjects.Children = CurrentChildren
-
                     return
                 end
 
                 if #CharacterObjects.Descendants ~= #CurrentDescendants then
                     CharacterObjects.Descendants = CurrentDescendants
-
                     return
                 end
 
@@ -738,15 +598,12 @@ do -- Functions
                         if CharacterObjects.Character then
                             CharacterObjects.HumanoidRootPart = FindFirstChild(CharacterObjects.Character, "HumanoidRootPart")
                         end
-
                         return
                     end
-                    
                     if not CharacterObjects.Humanoid then
                         if CharacterObjects.Character then
                             CharacterObjects.Humanoid = FindFirstChildWhichIsA(CharacterObjects.Character, "Humanoid")
                         end
-
                         return
                     end
                 else
@@ -756,7 +613,6 @@ do -- Functions
                         elseif CharacterObjects.Character and CharacterObjects.Character.PrimaryPart then
                             CharacterObjects.HumanoidRootPart = CharacterObjects.Character.PrimaryPart
                         end
-
                         return
                     end
                 end
@@ -786,7 +642,6 @@ do -- Functions
                     if BoxEnabled then
                         local BoxGlowGradient = Objects["BoxGlowGradient"]; do
                             local BoxGlowEnabled, BoxGlowColor, BoxGlowTransparency, BoxGlowRotation = ESPSettings.BoundingBox.Glow.Enabled, ESPSettings.BoundingBox.Glow.Color, ESPSettings.BoundingBox.Glow.Transparency, ESPSettings.BoundingBox.Glow.Rotation
-
                             if BoxGlowEnabled then
                                 BoxGlow.ImageTransparency = 0
                                 BoxGlowGradient.Rotation = BoxGlowRotation
@@ -807,14 +662,12 @@ do -- Functions
                                 BoxInlineGradient.Color = ColorSequence_new{ColorSequenceKeypoint_new(0, BoxColor[1]), ColorSequenceKeypoint_new(1, BoxColor[2])}
                                 BoxInlineGradient.Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, BoxTransparency[1]), NumberSequenceKeypoint_new(1, BoxTransparency[2])}
                                 BoxInlineGradient.Rotation = BoxRotation
-
                                 BoxOutlineGradient.Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, BoxTransparency[1]), NumberSequenceKeypoint_new(1, BoxTransparency[2])}
                                 BoxOutlineGradient.Rotation = BoxRotation
                             end
 
                             local BoxFillGradient = Objects["BoxFillGradient"]; do
                                 local BoxFillColor, BoxFillTransparency, BoxFillRotation = ESPSettings.BoundingBox.Fill.Color, ESPSettings.BoundingBox.Fill.Transparency, ESPSettings.BoundingBox.Fill.Rotation
-
                                 BoxFill.Visible = ESPSettings.BoundingBox.Fill.Enabled
                                 BoxFill.Size = UDim2_fromOffset(BoxWidth, BoxHeight)
                                 BoxFillGradient.Rotation = BoxFillRotation
@@ -826,15 +679,12 @@ do -- Functions
                                 CornerHolder.Visible = true
                                 CornerHolder.Size = UDim2_fromOffset(BoxWidth + 2, BoxHeight + 2)
                             end
-
                             for i = 1, 8 do
                                 local Line = Objects["Line_" .. i]
                                 local Stroke = Line.UIStroke
                                 local LayoutPosition = Layout[i]
                                 local Position, Size, AnchorPoint, Rotation = LayoutPosition[1], LayoutPosition[2], LayoutPosition[3], LayoutPosition[4]
-
                                 Stroke.Transparency = BoxTransparency[1]
-
                                 Line.Position = Position
                                 Line.Rotation = Rotation
                                 Line.BackgroundColor3 = BoxColor[1]
@@ -849,10 +699,8 @@ do -- Functions
                         BoxOutline.Parent.Visible = false
                         BoxInline.Parent.Visible = false
                         BoxFill.Visible = false
-
                         for i = 1, 8 do
                             local Line = Objects["Line_" .. i]
-                            
                             Line.Visible = false
                         end
                     end
@@ -871,21 +719,18 @@ do -- Functions
                                 ["Left"] = UDim2_new(0, 1, BarValue, 0),
                                 ["Right"] = UDim2_new(0, 1, BarValue, 0),
                             }
-
                             local OutlineSizes = {
                                 ["Top"] = UDim2_new(1, 0, 0, 1),
                                 ["Bottom"] = UDim2_new(1, 0, 0, 1),
                                 ["Left"] = UDim2_new(0, 1, 1, 0),
                                 ["Right"] = UDim2_new(0, 1, 1, 0),
                             }
-
                             local GradientRotations = {
                                 ["Top"] = {-180, Vector2_new(1 - BarValue, 0)},
                                 ["Bottom"] = {-180, Vector2_new(1 - BarValue, 0)},
                                 ["Left"] = {90, Vector2_new(0, BarValue - 1)},
                                 ["Right"] = {90, Vector2_new(0, BarValue - 1)},
                             }
-
                             local BarPositions = {
                                 ["Top"] = {Vector2_new(0, 0), UDim2_new(0, 0, 0, 0)},
                                 ["Bottom"] = {Vector2_new(0, 0), UDim2_new(0, 0, 0, 0)},
@@ -894,14 +739,11 @@ do -- Functions
                             }
 
                             NewParent.Visible = true
-
                             Bar.AnchorPoint = BarPositions[BarInfo.Position][1]
                             Bar.Position = BarPositions[BarInfo.Position][2]
                             Bar.Size = BarSizes[BarInfo.Position]
-
                             BarOutline.Parent = NewParent
                             BarOutline.Size = OutlineSizes[BarInfo.Position]
-
                             BarGradient.Rotation = GradientRotations[BarInfo.Position][1]
                             BarGradient.Offset = GradientRotations[BarInfo.Position][2]
                             BarGradient.Color = ColorSequence_new{ColorSequenceKeypoint_new(0, BarColor[1]), ColorSequenceKeypoint_new(0, BarColor[2]), ColorSequenceKeypoint_new(1, BarColor[3])}
@@ -918,7 +760,6 @@ do -- Functions
                             ["Left"] = Vector2_new(0.5, 0),
                             ["Right"] = Vector2_new(0.5, 0),
                         }
-
                         local Alignments = {
                             ["Top"] = Enum.TextXAlignment.Right,
                             ["Bottom"] = Enum.TextXAlignment.Right,
@@ -928,12 +769,10 @@ do -- Functions
 
                         if BarTextEnabled and IsPlayer then
                             local TextValue, TextVisible = BarInfo.Text.Type(Target, CharacterObjects)
-
                             BarText.Text = `{tostring(math_floor(TextValue))}{BarInfo.Text.Ending}`
                             BarText.TextColor3 = BarTextColor
                             BarText.TextTransparency = BarTextTransparency
                             BarText.UIStroke.Transparency = BarTextTransparency
-
                             if BarInfo.Text.FollowBar then
                                 BarText.Visible = TextVisible
                                 BarText.Parent = Bar
@@ -954,7 +793,6 @@ do -- Functions
 
                 local Chams = Objects["Highlight"]; do
                     local ChamsEnabled, ChamsFill, ChamsOutline = ESPSettings.Chams.Enabled, ESPSettings.Chams.Fill, ESPSettings.Chams.Outline
-                    
                     if ChamsEnabled then
                         Chams.Enabled = true
                         Chams.DepthMode = ESPSettings.Chams.DepthMode
@@ -969,10 +807,8 @@ do -- Functions
 
                 local NameText = Objects["TargetName"]; do
                     local NameEnabled, NameColor, NameTransparency = ESPSettings.Name.Enabled, ESPSettings.Name.Color, ESPSettings.Name.Transparency
-                    
                     if NameEnabled then
                         local TargetName = if ESPSettings.Name.UseDisplay then (IsPlayer and Target.DisplayName or Target.Name) else Target.Name
-
                         NameText.Visible = true
                         NameText.Text = Utility.GetFontType(ESPSettings, TargetName)
                         NameText.TextXAlignment = TextAlignments[ESPSettings.Name.Position]
@@ -987,7 +823,6 @@ do -- Functions
 
                 local DistanceText = Objects["Distance"]; do
                     local DistanceEnabled, DistanceColor, DistanceTransparency = ESPSettings.Distance.Enabled, ESPSettings.Distance.Color, ESPSettings.Distance.Transparency
-                    
                     if DistanceEnabled then
                         DistanceText.Visible = true
                         DistanceText.TextXAlignment = TextAlignments[ESPSettings.Distance.Position]
@@ -1003,10 +838,8 @@ do -- Functions
 
                 local WeaponText = Objects["Weapon"]; do
                     local WeaponEnabled, WeaponColor, WeaponTransparency = ESPSettings.Weapon.Enabled, ESPSettings.Weapon.Color, ESPSettings.Weapon.Transparency
-                    
                     if IsPlayer and WeaponEnabled then
                         local Tool = PlayerHelper.GetTool(Target) or TargetInfo.CurrentTool
-
                         WeaponText.Visible = true
                         WeaponText.TextXAlignment = TextAlignments[ESPSettings.Weapon.Position]
                         WeaponText.Parent = Objects[`{ESPSettings.Weapon.Position}TextHolder`]
@@ -1021,10 +854,8 @@ do -- Functions
 
                 local FlagsText = Objects["Flags"]; do
                     local FlagsEnabled, FlagsColor, FlagsTransparency = ESPSettings.Flags.Enabled, ESPSettings.Flags.Color, ESPSettings.Flags.Transparency
-                    
                     if FlagsEnabled then
                         local Flags = ESPSettings.Flags.Type(Target, CharacterObjects)
-
                         FlagsText.Visible = true
                         FlagsText.TextXAlignment = TextAlignments[ESPSettings.Flags.Position]
                         FlagsText.Parent = Objects[`{ESPSettings.Flags.Position}TextHolder`]
@@ -1042,22 +873,18 @@ do -- Functions
                 for _, Object in Objects do
                     Object:Destroy()
                 end
-
                 if TargetInfo.CharacterConnection then
                     TargetInfo.CharacterConnection:Disconnect()
                     TargetInfo.CharacterConnection = nil
                 end
-
                 if ToolConnection.Added then
                     ToolConnection.Added:Disconnect()
                     ToolConnection.Added = nil
                 end
-
                 if ToolConnection.Removed then
                     ToolConnection.Removed:Disconnect()
                     ToolConnection.Removed = nil
                 end
-
                 ESP.Targets[Type][Target] = nil
             end
         end
@@ -1085,11 +912,9 @@ do -- Functions
         for _, Connection in ConnectionsTable do
             Connection:Disconnect()
         end
-
         for _, Object in ObjectsTable do
             Object:Destroy()
         end
-
         getgenv().Fonts = nil
     end
 end
@@ -1103,7 +928,6 @@ do -- Connections
 
     Utility.AddConnection(Players.PlayerAdded, LPH_NO_VIRTUALIZE(function(Player)
         Player.CharacterAdded:Wait()
-
         ESP.AddTarget(Player, "Players")
     end))
 
@@ -1121,25 +945,31 @@ do -- Connections
 end
 
 -- ============================================================
--- AIMBOT (Always aim, FOV, Smooth, Show Target Name)
+-- AIMBOT (Always aim, FOV 80 gradient, Minecraftia font)
 -- ============================================================
 do
     local Aimbot = {
         Settings = {
             Enabled        = true,
-            FOV            = 150,      -- bán kính vòng FOV (pixel)
-            Smoothness     = 0.20,     -- 0.1 = nhanh, 0.3 = mượt hơn (vừa phải)
+            FOV            = 80,
+            Smoothness     = 0.25,
             TeamCheck      = true,
-            AimPart        = "Head",   -- "Head" hoặc "HumanoidRootPart"
+            AimPart        = "Head",
             ShowTargetName = true,
-            Font           = "Tahoma", -- font đã tải trong ESP
+            Font           = "Minecraftia",
             FontSize       = 14,
+
+            FOVColor1      = Color3_fromRGB(216, 126, 157),
+            FOVColor2      = Color3_fromRGB(52, 131, 235),
         },
         CurrentTarget = nil,
     }
     getgenv().Aimbot = Aimbot.Settings
 
-    -- ===== GUI: Vòng FOV + Tên target =====
+    local MouseMoveRel = (typeof(mousemoverel) == "function" and mousemoverel)
+        or (typeof(syn) == "table" and syn.mousemoverel)
+        or nil
+
     local AimbotGUI = Utility.CreateObject("ScreenGui", {
         Name = "AimbotGUI",
         ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets,
@@ -1159,13 +989,37 @@ do
         Size = UDim2_fromOffset(Aimbot.Settings.FOV * 2, Aimbot.Settings.FOV * 2),
     })
     Utility.CreateObject("UICorner", { Parent = FOVFrame, CornerRadius = UDim_new(1, 0) })
-    Utility.CreateObject("UIStroke", {
+
+    local FOVStroke = Utility.CreateObject("UIStroke", {
         Parent = FOVFrame,
-        Thickness = 1,
+        Thickness = 2,
         Color = Color3_fromRGB(255, 255, 255),
-        Transparency = 0.5,
+        Transparency = 0.15,
         ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+        LineJoinMode = Enum.LineJoinMode.Round,
     })
+
+    local FOVGradient = Utility.CreateObject("UIGradient", {
+        Parent = FOVStroke,
+        Rotation = 45,
+        Color = ColorSequence_new{
+            ColorSequenceKeypoint_new(0, Aimbot.Settings.FOVColor1),
+            ColorSequenceKeypoint_new(0.5, Aimbot.Settings.FOVColor2),
+            ColorSequenceKeypoint_new(1, Aimbot.Settings.FOVColor1),
+        },
+    })
+
+    local CenterDot = Utility.CreateObject("Frame", {
+        Parent = AimbotGUI,
+        BackgroundColor3 = Aimbot.Settings.FOVColor1,
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
+        AnchorPoint = Vector2_new(0.5, 0.5),
+        Position = UDim2_new(0.5, 0, 0.5, 0),
+        Size = UDim2_fromOffset(3, 3),
+        ZIndex = 10,
+    })
+    Utility.CreateObject("UICorner", { Parent = CenterDot, CornerRadius = UDim_new(1, 0) })
 
     local TargetNameLabel = Utility.CreateObject("TextLabel", {
         Parent = AimbotGUI,
@@ -1176,14 +1030,14 @@ do
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         AnchorPoint = Vector2_new(0.5, 0),
-        Position = UDim2_new(0.5, 0, 0.5, Aimbot.Settings.FOV + 10),
+        Position = UDim2_new(0.5, 0, 0.5, Aimbot.Settings.FOV + 8),
         Size = UDim2_fromOffset(400, 20),
         Visible = false,
         TextStrokeTransparency = 0,
         TextStrokeColor3 = Color3_fromRGB(0, 0, 0),
+        ZIndex = 10,
     })
 
-    -- ===== Helpers =====
     local function GetAimPart(character)
         return character:FindFirstChild(Aimbot.Settings.AimPart)
             or character:FindFirstChild("HumanoidRootPart")
@@ -1213,7 +1067,7 @@ do
                                 local dist = (Vector2_new(screenPos.X, screenPos.Y) - center).Magnitude
                                 if dist < minDist then
                                     minDist = dist
-                                    closest = { player = player, part = aimPart }
+                                    closest = { player = player, part = aimPart, screenPos = screenPos }
                                 end
                             end
                         end
@@ -1224,13 +1078,67 @@ do
         return closest
     end
 
-    -- ===== Main loop =====
+    local function ApplyAim(target, dt)
+        local smooth = Aimbot.Settings.Smoothness
+
+        if MouseMoveRel then
+            local screenPos, onScreen = WorldToViewportPoint(Camera, target.part.Position)
+            if not onScreen or screenPos.Z <= 0 then return end
+
+            local vp = Camera.ViewportSize
+            local dx = screenPos.X - (vp.X / 2)
+            local dy = screenPos.Y - (vp.Y / 2)
+
+            pcall(MouseMoveRel, dx * smooth, dy * smooth)
+        else
+            local camCF = Camera.CFrame
+            local targetCF = CFrame.lookAt(camCF.Position, target.part.Position)
+            local alpha = math_clamp(smooth * dt * 60, 0, 1)
+            Camera.CFrame = camCF:Lerp(targetCF, alpha)
+        end
+    end
+
     Utility.AddConnection(RunService.RenderStepped, LPH_NO_VIRTUALIZE(function(dt)
-        -- sync FOV size nếu user đổi settings
         local wantedSize = UDim2_fromOffset(Aimbot.Settings.FOV * 2, Aimbot.Settings.FOV * 2)
         if FOVFrame.Size ~= wantedSize then
             FOVFrame.Size = wantedSize
-            TargetNameLabel.Position = UDim2_new(0.5, 0, 0.5, Aimbot.Settings.FOV + 10)
+            TargetNameLabel.Position = UDim2_new(0.5, 0, 0.5, Aimbot.Settings.FOV + 8)
+        end
+
+        FOVGradient.Color = ColorSequence_new{
+            ColorSequenceKeypoint_new(0, Aimbot.Settings.FOVColor1),
+            ColorSequenceKeypoint_new(0.5, Aimbot.Settings.FOVColor2),
+            ColorSequenceKeypoint_new(1, Aimbot.Settings.FOVColor1),
+        }
+        CenterDot.BackgroundColor3 = Aimbot.Settings.FOVColor1
+
+        if not Aimbot.Settings.Enabled then
+            TargetNameLabel.Visible = false
+            FOVFrame.Visible = false
+            CenterDot.Visible = false
+            return
+        end
+        FOVFrame.Visible = true
+        CenterDot.Visible = true
+
+        local target = GetClosestTarget()
+        Aimbot.CurrentTarget = target
+
+        if target then
+            TargetNameLabel.Text = target.player.DisplayName
+            TargetNameLabel.Visible = Aimbot.Settings.ShowTargetName
+            ApplyAim(target, dt)
+        else
+            TargetNameLabel.Visible = false
+        end
+    end))
+
+    local oldUnload = ESP.Unload
+    function ESP.Unload()
+        if oldUnload then oldUnload() end
+        if AimbotGUI then AimbotGUI:Destroy() end
+    end
+endOV + 10)
         end
 
         if not Aimbot.Settings.Enabled then
