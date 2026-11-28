@@ -1,937 +1,1260 @@
---[[
-    User Interface Library
-    Made by Late
-    Enhanced with Liquid Glass (unified with MinimizedBar), Script Info API, External Icons & Minimize Bar
-]]
+if ESP and ESP.Unload then
+    ESP.Unload()
+end
 
---// Connections
+if not LPH_OBFUSCATED then
+    LPH_NO_VIRTUALIZE = function(Func) return Func end
+end
+
+local game = game
 local GetService = game.GetService
-local Connect = game.Loaded.Connect
-local Wait = game.Loaded.Wait
-local Clone = game.Clone 
-local Destroy = game.Destroy 
-
-if (not game:IsLoaded()) then
-    local Loaded = game.Loaded
-    Loaded.Wait(Loaded);
+local Service = function(Name)
+    return cloneref(GetService(game, Name))
 end
 
---// Important 
-local Setup = {
-    Keybind = Enum.KeyCode.LeftControl,
-    Transparency = 0.2,
-    ThemeMode = "Dark",
-    Size = nil,
+local Players = Service("Players")
+local RunService = Service("RunService")
+local HttpService = Service("HttpService")
+local Workspace = Service("Workspace")
+
+local Instance_new = Instance.new
+local Color3_fromRGB, Color3_new, Color3_fromHSV, Color3_fromHex = Color3.fromRGB, Color3.new, Color3.fromHSV, Color3.fromHex
+local table_clear, table_insert, table_remove, table_unpack, table_find, table_sort, table_concat = table.clear, table.insert, table.remove, table.unpack, table.find, table.sort, table.concat
+local string_find, string_match, string_format, string_gsub, string_lower, string_upper, string_sub = string.find, string.match, string.format, string.gsub, string.lower, string.upper, string.sub
+local task_wait, task_spawn, task_delay, task_defer = task.wait, task.spawn, task.delay, task.defer
+local coroutine_wrap, coroutine_close, coroutine_create, coroutine_resume = coroutine.wrap, coroutine.close, coroutine.create, coroutine.resume
+local os_clock, os_date = os.clock, os.date
+local Vector2_new, Vector3_new, Vector3_one, Vector3_zero = Vector2.new, Vector3.new, Vector3.one, Vector3.zero
+local UDim2_new, UDim2_fromScale, UDim2_fromOffset, UDim_new = UDim2.new, UDim2.fromScale, UDim2.fromOffset, UDim.new
+local CFrame_Angles, CFrame_new = CFrame.Angles, CFrame.new
+local math_clamp, math_round, math_floor, math_huge, math_sin, math_cos, math_pi, math_min, math_deg, math_max, math_random = math.clamp, math.round, math.floor, math.huge, math.sin, math.cos, math.pi, math.min, math.deg, math.max, math.random
+local Drawing_new, Rect_new, Font_new, ColorSequence_new, ColorSequenceKeypoint_new, TweenInfo_new, NumberSequence_new, NumberSequenceKeypoint_new = Drawing.new, Rect.new, Font.new, ColorSequence.new, ColorSequenceKeypoint.new, TweenInfo.new, NumberSequence.new, NumberSequenceKeypoint.new
+local FindFirstChild, GetChildren, GetDescendants, WaitForChild, FindFirstChildWhichIsA, IsA = game.FindFirstChild, game.GetChildren, game.GetDescendants, game.WaitForChild, game.FindFirstChildWhichIsA, game.IsA
+
+getgenv().ESP = {
+    Settings = {
+        Players = {
+            Enabled = true,
+            LocalPlayer = true,
+
+            Font = "Tahoma",
+            FontSize = 12,
+            FontType = "lowercase", -- uppercase, lowercase, none
+
+            MaxDistance = math.huge,
+            RefreshRate = 60,
+
+            BoundingBox = {
+                Enabled = true,
+                DynamicBox = true, -- may drop fps
+                IncludeAccessories = false,
+                Type = "2D", -- 2D, Corner
+                
+                Rotation = 90,
+                Color = {Color3_fromRGB(216, 126, 157), Color3_fromRGB(216, 126, 157)},
+                Transparency = {0, 0},
+
+                Glow = {
+                    Enabled = false,
+                    Rotation = 90,
+                    Color = {Color3_fromRGB(216, 126, 157), Color3_fromRGB(216, 126, 157)},
+                    Transparency = {0.75, 0.75},
+                },
+
+                Fill = {
+                    Enabled = true,
+                    Rotation = 90,
+                    Color = {Color3_fromRGB(216, 126, 157), Color3_fromRGB(216, 126, 157)},
+                    Transparency = {1, 0.5},
+                },
+            },
+
+            Bars = {
+                HealthBar = {
+                    Enabled = true,
+                    Position = "Left",
+                    Color = {Color3_fromRGB(131, 245, 78), Color3_fromRGB(255, 255, 0), Color3_fromRGB(252, 71, 77)},
+
+                    Type = function(Player, CharacterObjects)
+                        if not IsA(Player, "Player") then return end
+
+                        local Humanoid = CharacterObjects.Humanoid
+                        if not Humanoid then return end
+
+                        return Humanoid.Health / Humanoid.MaxHealth -- what value the bar follows
+                    end,
+
+                    Text = {
+                        Enabled = true,
+                        FollowBar = true,
+                        Ending = "",
+                        Position = "Left", -- // will ignore if FollowBar is true
+                        Color = Color3_fromRGB(255, 255, 255),
+                        Transparency = 0,
+
+                        Type = function(Player, CharacterObjects)
+                            if not IsA(Player, "Player") then return end
+
+                            local Humanoid = CharacterObjects.Humanoid
+                            if not Humanoid then return end
+
+                            return Humanoid.Health, Humanoid.Health ~= Humanoid.MaxHealth -- Value the text follows, Value the text turns visible if follow bar is on
+                        end,
+                    },
+                },
+
+                ArmorBar = {
+                    Enabled = true,
+                    Position = "Bottom",
+                    Color = {Color3_fromRGB(52, 131, 235), Color3_fromRGB(52, 131, 235), Color3_fromRGB(52, 131, 235)},
+
+                    Type = function(Player, CharacterObjects)
+                        if not IsA(Player, "Player") then return end
+
+                        local Humanoid = CharacterObjects.Humanoid
+                            if not Humanoid then return end
+
+                        return Humanoid.Health / Humanoid.MaxHealth -- what value the bar follows
+                    end,
+
+                    Text = {
+                        Enabled = true,
+                        FollowBar = true,
+                        Ending = "%",
+                        Position = "Left", -- // will ignore if FollowBar is true
+                        Color = Color3_fromRGB(255, 255, 255),
+                        Transparency = 0,
+
+                        Type = function(Player, CharacterObjects)
+                            if not IsA(Player, "Player") then return end
+
+                            local Humanoid = CharacterObjects.Humanoid
+                            if not Humanoid then return end
+
+                            return Humanoid.Health, Humanoid.Health ~= Humanoid.MaxHealth -- Value the text follows, value the text turns visible if follow bar is on
+                        end,
+                    },
+                },
+            },
+
+            Chams = {
+                Enabled = true,
+                DepthMode = Enum.HighlightDepthMode.AlwaysOnTop,
+                Fill = {Color3_fromRGB(216, 126, 157), 0.5},
+                Outline = {Color3_fromRGB(0, 0, 0), 0.5},
+            },
+
+            Name = {
+                Enabled = true,
+                UseDisplay = true,
+                Position = "Top",
+                Color = Color3_fromRGB(255, 255, 255),
+                Transparency = 0,
+            },
+
+            Distance = {
+                Enabled = true,
+                Ending = "st",
+                Position = "Bottom",
+                Color = Color3_fromRGB(255, 255, 255),
+                Transparency = 0,
+            },
+
+            Weapon = {
+                Enabled = true,
+                Position = "Bottom",
+                Color = Color3_fromRGB(255, 255, 255),
+                Transparency = 0,
+            },
+
+            Flags = {
+                Enabled = true,
+                Position = "Right",
+                Color = Color3_fromRGB(255, 255, 255),
+                Transparency = 0,
+
+                Type = function(Player, CharacterObjects)
+                    local Flags = {}
+
+                    if not IsA(Player, "Player") then return Flags end
+
+                    local Humanoid = CharacterObjects.Humanoid
+                    if not Humanoid then return end
+
+                    if Humanoid.MoveDirection.Magnitude > 0 then
+                        table_insert(Flags, "moving")
+                    end
+
+                    if Humanoid.Jump then
+                        table_insert(Flags, "jumping")
+                    end
+
+                    return Flags -- return a table for it to work
+                end
+            },
+        },
+    },
+
+    Connections = {},
+    Errors = {},
+    Objects = {},
+    Targets = {},
+    Folder = "ESP",
+    Font = nil,
+    Holder = nil,
 }
 
-local Theme = {
-    Primary = Color3.fromRGB(30, 30, 30),
-    Secondary = Color3.fromRGB(35, 35, 35),
-    Component = Color3.fromRGB(40, 40, 40),
-    Interactables = Color3.fromRGB(45, 45, 45),
-    Tab = Color3.fromRGB(200, 200, 200),
-    Title = Color3.fromRGB(240,240,240),
-    Description = Color3.fromRGB(200,200,200),
-    Shadow = Color3.fromRGB(0, 0, 0),
-    Outline = Color3.fromRGB(40, 40, 40),
-    Icon = Color3.fromRGB(220, 220, 220),
+local Client = Players.LocalPlayer
+local Camera = FindFirstChildWhichIsA(Workspace, "Camera")
+local Viewport = Camera.ViewportSize
+local ConnectionsTable = ESP.Connections
+local ObjectsTable = ESP.Objects
+local DrawingsTable = ESP.Drawings
+local FolderLocation = ESP.Folder
+local ESPErrors = ESP.Errors
+local ESPSettings = ESP.Settings
+local WorldToViewportPoint = Camera.WorldToViewportPoint
+local ExecutorName = getexecutorname()
+
+local function P(p)
+    return p:gsub("\\", "/")
+end
+
+do 
+    local baseFolder = P(FolderLocation)
+    local fontsFolder = P(FolderLocation .. "/Fonts")
+
+    if not isfolder(baseFolder) then
+        makefolder(baseFolder)
+    end
+
+    if not isfolder(fontsFolder) then
+        makefolder(fontsFolder)
+    end
+end
+
+local FontsToDownload = {
+    ["Tahoma"] = {Link = "https://github.com/LuckyHub1/LuckyHub/raw/main/zekton_rg.ttf"},
+    ["Minecraftia"] = {Link = "https://github.com/LuckyHub1/LuckyHub/raw/refs/heads/main/Minecraftia.ttf"},
+    ["Silkscreen"] = {Link = "https://github.com/LuckyHub1/LuckyHub/raw/refs/heads/main/Silkscreen.ttf"},
 }
 
---// Services & Functions
-local Type, Blur = nil
-local LocalPlayer = GetService(game, "Players").LocalPlayer;
-local Services = {
-    Insert = GetService(game, "InsertService");
-    Tween = GetService(game, "TweenService");
-    Run = GetService(game, "RunService");
-    Input = GetService(game, "UserInputService");
-}
+do -- Fonts
+    local fontsFolder = P(FolderLocation .. "/Fonts")
 
-local Player = {
-    Mouse = LocalPlayer:GetMouse();
-    GUI = LocalPlayer.PlayerGui;
-}
+    for Name, Table in FontsToDownload do
+        local ttfPath  = P(fontsFolder .. "/" .. Name .. ".ttf")
+        local fontPath = P(fontsFolder .. "/" .. Name .. ".font")
 
-local Tween = function(Object : Instance, Speed : number, Properties : {},  Info : { EasingStyle: Enum?, EasingDirection: Enum? })
-    local Style, Direction
-    if Info then
-        Style, Direction = Info["EasingStyle"], Info["EasingDirection"]
+        if not isfile(ttfPath) then
+            pcall(writefile, ttfPath, game:HttpGet(Table.Link))
+        end
+        
+        if not isfile(fontPath) or ExecutorName == "Potassium" then
+            local Config = {
+                name = Name,
+                faces = {{
+                    name = "Regular",
+                    weight = 9e9,
+                    style = "normal",
+                    assetId = getcustomasset(ttfPath)
+                }}
+            }
+
+            pcall(writefile, fontPath, HttpService:JSONEncode(Config))
+        end
+    end
+
+    if not getgenv().Fonts then
+        getgenv().Fonts = {
+            Loaded = {}
+        }
+
+        for _, FontPath in listfiles(fontsFolder) do
+            FontPath = P(FontPath)
+
+           local Name = string_match(FontPath, fontsFolder .. "/(.+)%.font")
+              if Name then
+    local ok, asset = pcall(getcustomasset, FontPath)
+
+    if ok then
+        Fonts.Loaded[Name] = Font_new(asset, Enum.FontWeight.Regular)
     else
-        Style, Direction = Enum.EasingStyle.Sine, Enum.EasingDirection.Out
+        -- fall back cause shit mobile noobs
+        Fonts.Loaded[Name] = Font_new(Enum.Font.SourceSans, Enum.FontWeight.Regular)
     end
-    return Services.Tween:Create(Object, TweenInfo.new(Speed, Style, Direction), Properties):Play()
 end
 
-local SetProperty = function(Object: Instance, Properties: {})
-    for Index, Property in next, Properties do
-        Object[Index] = (Property);
+        end
     end
-    return Object
 end
 
-local Multiply = function(Value, Amount)
-    local New = {
-        Value.X.Scale * Amount;
-        Value.X.Offset * Amount;
-        Value.Y.Scale * Amount;
-        Value.Y.Offset * Amount;
+
+local Utility = {}; do
+    function Utility.AddConnection(Signal, Function)
+        local Connection = Signal:Connect(function(...)
+            local Args = {...}
+            
+            local Success, Message = pcall(function() coroutine_wrap(Function)(table_unpack(Args)) end)
+            
+            if not Success and not ESPErrors[Message] then
+                local ErrorMessage = string_format("[ERROR] | An error has occured:\n%s", Message)
+
+                warn(ErrorMessage)
+                
+                ESPErrors[Message] = Message
+                
+                if ConnectionsTable[Connection] then
+                    ConnectionsTable[Connection] = nil
+                end
+                
+                return Connection and Connection:Disconnect()
+            end
+        end)
+        
+        if Connection and ConnectionsTable then
+            table_insert(ConnectionsTable, Connection)
+        end
+        
+        return Connection
+    end
+
+    function Utility.CreateObject(Type, Properties, Hidden)
+        local Hidden = Hidden or false
+        local Object = Instance_new(Type)
+
+        for Index, Value in Properties do
+            Object[Index] = Value
+        end
+
+        table_insert(ObjectsTable, Object)
+
+        return Object
+    end
+
+    function Utility.CalculateBox(ESPSettings, Target, RootPart, Parts)
+        local MinX, MinY, MaxX, MaxY = 9000, 9000, -9000, -9000
+        local BoxWidth, BoxHeight = 0, 0
+        local Position, OnScreen = WorldToViewportPoint(Camera, RootPart.Position)
+
+        if ESPSettings.BoundingBox.DynamicBox then
+            for _, Part in Parts do
+                if IsA(Part, "BasePart") and Part.Name ~= "HumanoidRootPart" and Part.Transparency ~= 1 then
+                    local PartCFrame = Part.CFrame
+                    local PartSize = Part.Size
+                    local Corners = {
+                        PartCFrame * Vector3_new(PartSize.X / 2, PartSize.Y / 2, PartSize.Z / 2),
+                        PartCFrame * Vector3_new(-PartSize.X / 2, PartSize.Y / 2, PartSize.Z / 2),
+                        PartCFrame * Vector3_new(PartSize.X / 2, -PartSize.Y / 2, PartSize.Z / 2),
+                        PartCFrame * Vector3_new(-PartSize.X / 2, -PartSize.Y / 2, PartSize.Z / 2),
+                        PartCFrame * Vector3_new(PartSize.X / 2, PartSize.Y / 2, -PartSize.Z / 2),
+                        PartCFrame * Vector3_new(-PartSize.X / 2, PartSize.Y / 2, -PartSize.Z / 2),
+                        PartCFrame * Vector3_new(PartSize.X / 2, -PartSize.Y / 2, -PartSize.Z / 2),
+                        PartCFrame * Vector3_new(-PartSize.X / 2, -PartSize.Y / 2, -PartSize.Z / 2),
+                    }
+
+                    for _, Corner in Corners do
+                        local ScreenPosition, OnScreen = WorldToViewportPoint(Camera, Corner)
+
+                        MinX = math_min(MinX, ScreenPosition.X)
+                        MinY = math_min(MinY, ScreenPosition.Y)
+                        MaxX = math_max(MaxX, ScreenPosition.X)
+                        MaxY = math_max(MaxY, ScreenPosition.Y)
+                    end
+                end
+            end
+            
+            BoxWidth, BoxHeight = MaxX - MinX, MaxY - MinY
+        else
+            local Scale = (RootPart.Size.Y * Camera.ViewportSize.Y) / (Position.Z * 2)
+
+            BoxWidth, BoxHeight = 3 * Scale, 4.5 * Scale
+            MinX, MinY = Position.X - (BoxWidth / 2), Position.Y - (BoxHeight / 2)
+        end
+
+        return BoxWidth, BoxHeight, MinX, MinY, OnScreen
+    end
+
+    function Utility.GetFontType(ESPSettings, Text)
+        local FontType = string_lower(ESPSettings.FontType)
+
+        if FontType == "uppercase" then
+            return string_upper(Text)
+        elseif FontType == "lowercase" then
+            return string_lower(Text)
+        else
+            return Text
+        end
+    end
+end
+
+local PlayerHelper = {}; do
+    function PlayerHelper.GetCharacter(Player)
+        if not Player then return nil end
+        
+        local Character = Player.Character
+
+        --[[
+            if CurrentGame == "Phantom Forces" then
+                Character = ...
+            elseif CurrentGame == "Bad Business" then
+                Character = ...
+            end
+        ]]
+
+        return Character
+    end
+
+    function PlayerHelper.GetChildren(Character)
+        if not Character then return {} end
+        
+        local Children = Character:GetChildren()
+
+        return Children
+    end
+
+    function PlayerHelper.GetDescendants(Character)
+        if not Character then return {} end
+        
+        local Descendants = Character:GetDescendants()
+
+        return Descendants
+    end
+
+    function PlayerHelper.GetTool(Player)
+        if not Player then return nil end
+        
+        --[[
+            return nil to use the default way (connections)
+
+            if CurrentGame == "Phantom Forces" then
+                return ...
+            elseif CurrentGame == "Bad Business" then
+                return ...
+            end 
+        ]]
+
+        return nil
+    end
+end
+
+do -- Functions
+    local TextAlignments = {
+        ["Left"] = "Right",
+        ["Right"] = "Left",
+        ["Top"] = "Center",
+        ["Bottom"] = "Center",
     }
-    return UDim2.new(unpack(New))
-end
 
-local Color = function(Color, Factor, Mode)
-    Mode = Mode or Setup.ThemeMode
-    if Mode == "Light" then
-        return Color3.fromRGB((Color.R * 255) - Factor, (Color.G * 255) - Factor, (Color.B * 255) - Factor)
-    else
-        return Color3.fromRGB((Color.R * 255) + Factor, (Color.G * 255) + Factor, (Color.B * 255) + Factor)
-    end
-end
+    local Layout = {
+        {UDim2_new(0, -1, 0, -1), UDim2_new(0.3, 0, 0, 1), Vector2_new(0, 0), 0},
+        {UDim2_new(0, -1, 0, -1), UDim2_new(0, 1, 0.3, 0), Vector2_new(0, 0), 180},
 
-local Drag = function(Canvas)
-    if Canvas then
-        local Dragging, DragInput, Start, StartPosition
-        local function Update(input)
-            local delta = input.Position - Start
-            Canvas.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + delta.Y)
+        {UDim2_new(1, 1, 0, -1), UDim2_new(0.3, 0, 0, 1), Vector2_new(1, 0), 0},
+        {UDim2_new(1, 1, 0, -1), UDim2_new(0, 1, 0.3, 0), Vector2_new(1, 0), 180},
+
+        {UDim2_new(0, -1, 1, 1), UDim2_new(0.3, 0, 0, 1), Vector2_new(0, 1), 0},
+        {UDim2_new(0, -1, 1, 1), UDim2_new(0, 1, 0.3, 0), Vector2_new(0, 1), -180},
+
+        {UDim2_new(1, 1, 1, 1), UDim2_new(0.3, 0, 0, 1), Vector2_new(1, 1), 0},
+        {UDim2_new(1, 1, 1, 1), UDim2_new(0, 1, 0.3, 0), Vector2_new(1, 1), -180},
+    }
+
+    ESP.Holder = Utility.CreateObject("ScreenGui", {
+		Name = "\n",
+		ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets,
+		ZIndexBehavior = Enum.ZIndexBehavior.Global,
+		ResetOnSpawn = false,
+		DisplayOrder = 10000,
+		IgnoreGuiInset = true,
+		Parent = gethui()
+	})
+
+    function ESP.AddTarget(Target, Type)
+        if Target == nil then return end
+        if not ESP.Targets[Type] then ESP.Targets[Type] = {} end
+        if ESP.Targets[Type][Target] then return end
+
+        local TargetInfo = {
+            Objects = {},
+            CharacterObjects = {},
+            CharacterConnection = nil,
+            ToolConnection = {Added = nil, Removed = nil},
+            CurrentTool = "none",
+            LastTick = os_clock()
+        }
+
+        local IsPlayer = IsA(Target, "Player")
+        local IsBasePart = IsA(Target, "BasePart")
+        local Objects = TargetInfo.Objects
+        local LastTick = TargetInfo.LastTick
+        local ToolConnection = TargetInfo.ToolConnection
+        local CharacterObjects = TargetInfo.CharacterObjects
+        local ESPSettings = ESPSettings[Type]
+        local ESPFont = Fonts.Loaded[ESPSettings.Font]
+        local ESPFontSize = ESPSettings.FontSize
+        local ESPHolder = ESP.Holder
+
+        CharacterObjects.Character = if IsPlayer then (PlayerHelper.GetCharacter(Target)) else Target
+        CharacterObjects.Children = PlayerHelper.GetChildren(CharacterObjects.Character)
+        CharacterObjects.Descendants = PlayerHelper.GetDescendants(CharacterObjects.Character)
+
+        if IsPlayer and CharacterObjects.Character then
+            CharacterObjects.HumanoidRootPart = CharacterObjects.Character:FindFirstChild("HumanoidRootPart")
+            CharacterObjects.Humanoid = CharacterObjects.Character:FindFirstChildWhichIsA("Humanoid")
         end
-        Connect(Canvas.InputBegan, function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch and not Type then
-                Dragging = true
-                Start = Input.Position
-                StartPosition = Canvas.Position
-                Connect(Input.Changed, function()
-                    if Input.UserInputState == Enum.UserInputState.End then Dragging = false end
-                end)
-            end
-        end)
-        Connect(Canvas.InputChanged, function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch and not Type then
-                DragInput = Input
-            end
-        end)
-        Connect(Services.Input.InputChanged, function(Input)
-            if Input == DragInput and Dragging and not Type then Update(Input) end
-        end)
-    end
-end
 
-Resizing = { 
-    TopLeft = { X = Vector2.new(-1, 0), Y = Vector2.new(0, -1)};
-    TopRight = { X = Vector2.new(1, 0), Y = Vector2.new(0, -1)};
-    BottomLeft = { X = Vector2.new(-1, 0), Y = Vector2.new(0, 1)};
-    BottomRight = { X = Vector2.new(1, 0), Y = Vector2.new(0, 1)};
-}
+        do -- Functions
+            function TargetInfo.Init()
+                if #Objects > 0 then return end
 
-Resizeable = function(Tab, Minimum, Maximum)
-    task.spawn(function()
-        local MousePos, Size, UIPos = nil, nil, nil
-        if Tab and Tab:FindFirstChild("Resize") then
-            local Positions = Tab:FindFirstChild("Resize")
-            for Index, Types in next, Positions:GetChildren() do
-                Connect(Types.InputBegan, function(Input)
-                    if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        Type = Types
-                        MousePos = Vector2.new(Player.Mouse.X, Player.Mouse.Y)
-                        Size = Tab.AbsoluteSize
-                        UIPos = Tab.Position
-                    end
-                end)
-                Connect(Types.InputEnded, function(Input)
-                    if Input.UserInputType == Enum.UserInputType.MouseButton1 then Type = nil end
-                end)
-            end
-        end
-        local Resize = function(Delta)
-            if Type and MousePos and Size and UIPos and Tab:FindFirstChild("Resize")[Type.Name] == Type then
-                local Mode = Resizing[Type.Name]
-                local NewSize = Vector2.new(Size.X + Delta.X * Mode.X.X, Size.Y + Delta.Y * Mode.Y.Y)
-                NewSize = Vector2.new(math.clamp(NewSize.X, Minimum.X, Maximum.X), math.clamp(NewSize.Y, Minimum.Y, Maximum.Y))
-                local AnchorOffset = Vector2.new(Tab.AnchorPoint.X * Size.X, Tab.AnchorPoint.Y * Size.Y)
-                local NewAnchorOffset = Vector2.new(Tab.AnchorPoint.X * NewSize.X, Tab.AnchorPoint.Y * NewSize.Y)
-                local DeltaAnchorOffset = NewAnchorOffset - AnchorOffset
-                Tab.Size = UDim2.new(0, NewSize.X, 0, NewSize.Y)
-                Tab.Position = UDim2.new(
-                    UIPos.X.Scale, UIPos.X.Offset + DeltaAnchorOffset.X * Mode.X.X,
-                    UIPos.Y.Scale, UIPos.Y.Offset + DeltaAnchorOffset.Y * Mode.Y.Y
-                )
-            end
-        end
-        Connect(Player.Mouse.Move, function()
-            if Type then Resize(Vector2.new(Player.Mouse.X, Player.Mouse.Y) - MousePos) end
-        end)
-    end)
-end
+                if IsPlayer then
+                    TargetInfo.CharacterConnection = Utility.AddConnection(Target.CharacterAdded, function(Character)
+                        CharacterObjects.Character = Character
+                        CharacterObjects.HumanoidRootPart = WaitForChild(Character, "HumanoidRootPart", 10)
+                        CharacterObjects.Humanoid = WaitForChild(Character, "Humanoid", 10)
+                        CharacterObjects.Children = PlayerHelper.GetChildren(Character)
+                        CharacterObjects.Descendants = PlayerHelper.GetDescendants(Character)
 
---// Liquid Glass (External Library)
-local LiquidGlass = nil
-pcall(function()
-    LiquidGlass = loadstring(game:HttpGet("https://raw.githubusercontent.com/alexkkork/liquid-glass-luau/main/LiquidGlassPro.luau"))()
-end)
-
--- Shared glass config so window + minimized bar use IDENTICAL settings
-local GLASS_CONFIG = {
-    CornerRadius         = UDim.new(0, 10),
-    BackgroundTransparency = 0.85,
-    BlurTint             = Color3.fromRGB(200, 200, 220),
-    BorderTransparency   = 0.4,
-    Elasticity           = 0.1,
-    HoverHighlight       = false,
-    ClickScale           = 1,
-}
-
-local function setGlassVisible(glass, visible)
-    if not glass then return end
-    pcall(function()
-        local frame = glass:GetFrame()
-        if frame then frame.Visible = visible end
-    end)
-end
-
-local function resolveIcon(icon)
-    if type(icon) == "number" then
-        return "rbxassetid://" .. icon
-    elseif type(icon) == "string" then
-        if icon:match("^rbxassetid://") or icon:match("^rbxthumb://") or icon:match("^https?://") then
-            return icon
-        elseif tonumber(icon) then
-            return "rbxassetid://" .. icon
-        else
-            return icon
-        end
-    end
-    return ""
-end
-
---// Setup [UI]
-if (identifyexecutor) then
-    Screen = Services.Insert:LoadLocalAsset("rbxassetid://18490507748");
-    Blur = loadstring(game:HttpGet("https://raw.githubusercontent.com/lxte/lates-lib/main/Assets/Blur.lua"))();
-else
-    Screen = (script.Parent);
-    Blur = require(script.Blur)
-end
-
-Screen.Main.Visible = false
-
-xpcall(function()
-    Screen.Parent = game.CoreGui
-end, function() 
-    Screen.Parent = Player.GUI
-end)
-
---// Tables for Data
-local Animations = {}
-local Blurs = {}
-local Components = (Screen:FindFirstChild("Components"));
-local Library = {};
-local StoredInfo = {
-    ["Sections"] = {};
-    ["Tabs"] = {}
-};
-
---// Animations [Window]
-function Animations:Open(Window: CanvasGroup, Transparency: number, UseCurrentSize: boolean)
-    local Original = (UseCurrentSize and Window.Size) or Setup.Size
-    local Multiplied = Multiply(Original, 1.1)
-    local Shadow = Window:FindFirstChildOfClass("UIStroke")
-    SetProperty(Shadow, { Transparency = 1 })
-    SetProperty(Window, {
-        Size = Multiplied,
-        GroupTransparency = 1,
-        Visible = true,
-    })
-    Tween(Shadow, .25, { Transparency = 0.5 })
-    Tween(Window, .25, {
-        Size = Original,
-        GroupTransparency = Transparency or 0,
-    })
-end
-
-function Animations:Close(Window: CanvasGroup)
-    local Original = Window.Size
-    local Multiplied = Multiply(Original, 1.1)
-    local Shadow = Window:FindFirstChildOfClass("UIStroke")
-    SetProperty(Window, { Size = Original })
-    Tween(Shadow, .25, { Transparency = 1 })
-    Tween(Window, .25, {
-        Size = Multiplied,
-        GroupTransparency = 1,
-    })
-    task.wait(.25)
-    Window.Size = Original
-    Window.Visible = false
-end
-
-function Animations:Component(Component: any, Custom: boolean)    
-    Connect(Component.InputBegan, function() 
-        if Custom then
-            Tween(Component, .25, { Transparency = .85 });
-        else
-            Tween(Component, .25, { BackgroundColor3 = Color(Theme.Component, 5, Setup.ThemeMode) });
-        end
-    end)
-    Connect(Component.InputEnded, function() 
-        if Custom then
-            Tween(Component, .25, { Transparency = 1 });
-        else
-            Tween(Component, .25, { BackgroundColor3 = Theme.Component });
-        end
-    end)
-end
-
---// Library [Window]
-function Library:CreateWindow(Settings: { 
-    Title: string, 
-    Name: string?,
-    Icon: string?,
-    Size: UDim2, 
-    Transparency: number, 
-    MinimizeKeybind: Enum.KeyCode?, 
-    Blurring: boolean, 
-    Theme: string,
-    LiquidGlass: boolean?
-})
-    local Window = Clone(Screen:WaitForChild("Main"));
-    local Sidebar = Window:FindFirstChild("Sidebar");
-    local Holder = Window:FindFirstChild("Main");
-    local BG = Window:FindFirstChild("BackgroundShadow");
-    local Tab = Sidebar:FindFirstChild("Tab");
-
-    local Options = {};
-    local Examples = {};
-    local Opened = true;
-    local Maximized = false;
-    local BlurEnabled = false
-    local MinimizedBar = nil
-    local MinimizedBarGlass = nil
-    local GlassBackground = nil
-
-    for Index, Example in next, Window:GetDescendants() do
-        if Example.Name:find("Example") and not Examples[Example.Name] then
-            Examples[Example.Name] = Example
-        end
-    end
-
-    Drag(Window);
-    Resizeable(Window, Vector2.new(411, 271), Vector2.new(9e9, 9e9));
-    Setup.Transparency = Settings.Transparency or 0
-    Setup.Size = Settings.Size
-    Setup.ThemeMode = Settings.Theme or "Dark"
-
-    if Settings.Blurring then
-        Blurs[Settings.Title] = Blur.new(Window, 5)
-        BlurEnabled = true
-    end
-
-    if Settings.MinimizeKeybind then
-        Setup.Keybind = Settings.MinimizeKeybind
-    end
-
-    --// Script Info (Name & Icon)
-    local displayName = Settings.Name or Settings.Title
-    if displayName then
-        local titleLabel = Window:FindFirstChild("Title", true)
-        if titleLabel and titleLabel:IsA("TextLabel") then
-            titleLabel.Text = displayName
-        end
-    end
-    if Settings.Icon then
-        local iconLabel = Window:FindFirstChild("ICO", true)
-        if iconLabel and iconLabel:IsA("ImageLabel") then
-            iconLabel.Image = resolveIcon(Settings.Icon)
-        end
-    end
-
-    --// Liquid Glass Background for main window
-    if Settings.LiquidGlass and LiquidGlass then
-        GlassBackground = LiquidGlass.new({
-            Size         = Window.Size,
-            Position     = Window.Position,
-            AnchorPoint  = Window.AnchorPoint,
-            Parent       = Screen,
-            CornerRadius         = GLASS_CONFIG.CornerRadius,
-            BackgroundTransparency = GLASS_CONFIG.BackgroundTransparency,
-            BlurTint             = GLASS_CONFIG.BlurTint,
-            BorderTransparency   = GLASS_CONFIG.BorderTransparency,
-            Elasticity           = GLASS_CONFIG.Elasticity,
-            HoverHighlight       = GLASS_CONFIG.HoverHighlight,
-            ClickScale           = GLASS_CONFIG.ClickScale,
-        })
-        Window.BackgroundTransparency = 1
-        Window:GetPropertyChangedSignal("Size"):Connect(function()
-            if GlassBackground then GlassBackground:SetProperty("Size", Window.Size) end
-        end)
-        Window:GetPropertyChangedSignal("Position"):Connect(function()
-            if GlassBackground then GlassBackground:SetProperty("Position", Window.Position) end
-        end)
-    end
-
-    --// Close / toggle
-    local Close = function()
-        if Opened then
-            if BlurEnabled and Blurs[Settings.Title] then
-                Blurs[Settings.Title].root.Parent = nil
-            end
-            setGlassVisible(GlassBackground, false)
-            if MinimizedBar then MinimizedBar.Visible = false end
-            setGlassVisible(MinimizedBarGlass, false)
-            Opened = false
-            Animations:Close(Window)
-            Window.Visible = false
-        else
-            Animations:Open(Window, Setup.Transparency)
-            Opened = true
-            if BlurEnabled and Blurs[Settings.Title] then
-                Blurs[Settings.Title].root.Parent = workspace.CurrentCamera
-            end
-            setGlassVisible(GlassBackground, true)
-            if MinimizedBar then MinimizedBar.Visible = false end
-            setGlassVisible(MinimizedBarGlass, false)
-        end
-    end
-
-    for Index, Button in next, Sidebar.Top.Buttons:GetChildren() do
-        if Button:IsA("TextButton") then
-            local Name = Button.Name
-            Animations:Component(Button, true)
-            Connect(Button.MouseButton1Click, function() 
-                if Name == "Close" then
-                    Close()
-                elseif Name == "Maximize" then
-                    if Maximized then
-                        Maximized = false
-                        Tween(Window, .15, { Size = Setup.Size });
-                    else
-                        Maximized = true
-                        Tween(Window, .15, { Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0.5, 0.5 )});
-                    end
-                elseif Name == "Minimize" then
-                    --// Minimize → small glass bar matching window EXACTLY
-                    Opened = false
-                    Window.Visible = false
-                    if BlurEnabled and Blurs[Settings.Title] then
-                        Blurs[Settings.Title].root.Parent = nil
-                    end
-                    setGlassVisible(GlassBackground, false)
-
-                    if not MinimizedBar then
-                        -- 1) Create glass FIRST so it's behind the bar (matches main window approach)
-                        if Settings.LiquidGlass and LiquidGlass then
-                            MinimizedBarGlass = LiquidGlass.new({
-                                Size         = UDim2.new(0, 130, 0, 32),
-                                Position     = Window.Position,
-                                AnchorPoint  = Window.AnchorPoint,
-                                Parent       = Screen,
-                                CornerRadius         = GLASS_CONFIG.CornerRadius,
-                                BackgroundTransparency = GLASS_CONFIG.BackgroundTransparency,
-                                BlurTint             = GLASS_CONFIG.BlurTint,
-                                BorderTransparency   = GLASS_CONFIG.BorderTransparency,
-                                Elasticity           = GLASS_CONFIG.Elasticity,
-                                HoverHighlight       = GLASS_CONFIG.HoverHighlight,
-                                ClickScale           = GLASS_CONFIG.ClickScale,
-                            })
+                        local Highlight = Objects["Highlight"]; do
+                            Highlight.Adornee = CharacterObjects.Character
                         end
+                    end)
 
-                        -- 2) Then create the bar itself (transparent, just holds text)
-                        MinimizedBar = Instance.new("Frame")
-                        MinimizedBar.Name = "MinimizedBar"
-                        MinimizedBar.Size = UDim2.new(0, 130, 0, 32)
-                        MinimizedBar.Position = Window.Position
-                        MinimizedBar.BackgroundTransparency = 1
-                        MinimizedBar.BorderSizePixel = 0
-                        MinimizedBar.ZIndex = 10
-                        MinimizedBar.Parent = Screen
-
-                        -- Fallback corner if no glass
-                        if not (Settings.LiquidGlass and LiquidGlass) then
-                            MinimizedBar.BackgroundColor3 = Theme.Primary
-                            MinimizedBar.BackgroundTransparency = 0.15
-                            local UICorner = Instance.new("UICorner")
-                            UICorner.CornerRadius = GLASS_CONFIG.CornerRadius
-                            UICorner.Parent = MinimizedBar
-                            local UIStroke = Instance.new("UIStroke")
-                            UIStroke.Color = Theme.Outline
-                            UIStroke.Transparency = 0.5
-                            UIStroke.Parent = MinimizedBar
-                        end
-
-                        local ShowButton = Instance.new("TextButton")
-                        ShowButton.Size = UDim2.new(1, 0, 1, 0)
-                        ShowButton.BackgroundTransparency = 1
-                        ShowButton.Text = "Show UI"
-                        ShowButton.TextColor3 = Theme.Title
-                        ShowButton.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-                        ShowButton.TextStrokeTransparency = 0.6
-                        ShowButton.Font = Enum.Font.GothamBold
-                        ShowButton.TextSize = 14
-                        ShowButton.ZIndex = 11
-                        ShowButton.Parent = MinimizedBar
-
-                        -- Sync glass position/size when bar moves
-                        if MinimizedBarGlass then
-                            MinimizedBar:GetPropertyChangedSignal("Position"):Connect(function()
-                                if MinimizedBarGlass then MinimizedBarGlass:SetProperty("Position", MinimizedBar.Position) end
-                            end)
-                            MinimizedBar:GetPropertyChangedSignal("Size"):Connect(function()
-                                if MinimizedBarGlass then MinimizedBarGlass:SetProperty("Size", MinimizedBar.Size) end
-                            end)
-                        end
-
-                        ShowButton.MouseButton1Click:Connect(function()
-                            MinimizedBar.Visible = false
-                            setGlassVisible(MinimizedBarGlass, false)
-                            Window.Visible = true
-                            Animations:Open(Window, Setup.Transparency)
-                            Opened = true
-                            if BlurEnabled and Blurs[Settings.Title] then
-                                Blurs[Settings.Title].root.Parent = workspace.CurrentCamera
-                            end
-                            setGlassVisible(GlassBackground, true)
+                    if CharacterObjects.Character then
+                        ToolConnection.Added = Utility.AddConnection(CharacterObjects.Character.ChildAdded, function(Child)
+                            if IsA(Child, "Tool") then 
+                                TargetInfo.CurrentTool = Child.Name
+                            end 
+                        end)
+                        
+                        ToolConnection.Removed = Utility.AddConnection(CharacterObjects.Character.ChildRemoved, function(Child)
+                            if IsA(Child, "Tool") then 
+                                TargetInfo.CurrentTool = "none"
+                            end 
                         end)
                     end
+                end
 
-                    -- Place bar at window's current position, then show
-                    MinimizedBar.Position = UDim2.new(
-                        Window.Position.X.Scale, Window.Position.X.Offset,
-                        Window.Position.Y.Scale, Window.Position.Y.Offset
-                    )
-                    if MinimizedBarGlass then
-                        MinimizedBarGlass:SetProperty("Position", MinimizedBar.Position)
-                        setGlassVisible(MinimizedBarGlass, true)
+                Objects["Highlight"] = Utility.CreateObject("Highlight", {Parent = CharacterObjects.Character, Adornee = CharacterObjects.Character})
+                Objects["TargetHolder"] = Utility.CreateObject("Frame", {Parent = ESPHolder, Visible = true, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                Objects["TopHolder"] = Utility.CreateObject("Frame", {Parent = Objects["TargetHolder"], AutomaticSize = Enum.AutomaticSize.Y, Visible = true, BackgroundTransparency = 1, AnchorPoint = Vector2_new(0, 1), Position = UDim2_new(0, -2, 0, -5), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(1, 4, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                Objects["BottomHolder"] = Utility.CreateObject("Frame", {Parent = Objects["TargetHolder"], AutomaticSize = Enum.AutomaticSize.Y, Visible = true, BackgroundTransparency = 1, Position = UDim2_new(0, -2, 1, 3), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(1, 4, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                Objects["LeftHolder"] = Utility.CreateObject("Frame", {Parent = Objects["TargetHolder"], AutomaticSize = Enum.AutomaticSize.X, Visible = true, BackgroundTransparency = 1, AnchorPoint = Vector2_new(1, 0), Position = UDim2_new(0, -4, 0, -2), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 1, 4), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                Objects["RightHolder"] = Utility.CreateObject("Frame", {Parent = Objects["TargetHolder"], AutomaticSize = Enum.AutomaticSize.X, Visible = true, BackgroundTransparency = 1, Position = UDim2_new(1, 8, 0, -2), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 1, 4), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                
+                do -- Text Holders
+                    Objects["TopTextHolder"] = Utility.CreateObject("Frame", {Parent = Objects["TopHolder"], AutomaticSize = Enum.AutomaticSize.Y, Visible = true, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(1, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["TopTextHolder"], VerticalAlignment = Enum.VerticalAlignment.Bottom, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim_new(0, 0), SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIPadding", {Parent = Objects["TopTextHolder"], PaddingBottom = UDim_new(0, 2)})
+
+                    Objects["BottomTextHolder"] = Utility.CreateObject("Frame", {Parent = Objects["BottomHolder"], LayoutOrder = 2, AutomaticSize = Enum.AutomaticSize.Y, Visible = true, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(1, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["BottomTextHolder"], HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim_new(0, 0), SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIPadding", {Parent = Objects["BottomTextHolder"], PaddingTop = UDim_new(0, 2)})
+
+                    Objects["LeftTextHolder"] = Utility.CreateObject("Frame", {Parent = Objects["LeftHolder"], AutomaticSize = Enum.AutomaticSize.XY, Visible = true, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(1, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["LeftTextHolder"], HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim_new(0, 0), SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIPadding", {Parent = Objects["LeftTextHolder"], PaddingTop = UDim_new(0, -3)})
+
+                    Objects["RightTextHolder"] = Utility.CreateObject("Frame", {Parent = Objects["RightHolder"], LayoutOrder = 2, AutomaticSize = Enum.AutomaticSize.XY, Visible = true, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["RightTextHolder"], HorizontalAlignment = Enum.HorizontalAlignment.Left, Padding = UDim_new(0, 0), SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIPadding", {Parent = Objects["RightTextHolder"], PaddingTop = UDim_new(0, -3)})
+                end
+
+                do -- Bar Holders
+                    Objects["TopBarHolder"] = Utility.CreateObject("Frame", {Visible = false, Parent = Objects["TopHolder"], AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(1, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["TopBarHolder"], HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim_new(0, 1), VerticalAlignment = Enum.VerticalAlignment.Bottom, SortOrder = Enum.SortOrder.LayoutOrder})
+
+                    Objects["BottomBarHolder"] = Utility.CreateObject("Frame", {Visible = false, Parent = Objects["BottomHolder"], AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(1, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["BottomBarHolder"], HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim_new(0, 1), VerticalAlignment = Enum.VerticalAlignment.Bottom, SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIPadding", {Parent = Objects["BottomBarHolder"], PaddingTop = UDim_new(0, 2)})
+
+                    Objects["LeftBarHolder"] = Utility.CreateObject("Frame", {Visible = false, Parent = Objects["LeftHolder"], AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 1, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["LeftBarHolder"], FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim_new(0, 1), SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIPadding", {Parent = Objects["LeftBarHolder"], PaddingRight = UDim_new(0, 1)})
+
+                    Objects["RightBarHolder"] = Utility.CreateObject("Frame", {Visible = false, Parent = Objects["RightHolder"], AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 1, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["LeftBarHolder"], FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim_new(0, 1), SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIPadding", {Parent = Objects["RightBarHolder"], PaddingLeft = UDim_new(0, -3)})
+                end
+                
+                do -- List Layouts
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["TopHolder"], VerticalAlignment = Enum.VerticalAlignment.Bottom, Padding = UDim_new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["BottomHolder"], Padding = UDim_new(0, 1), SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIPadding", {Parent = Objects["LeftHolder"], PaddingRight = UDim_new(0, 1)})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["LeftHolder"], FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Left, Padding = UDim_new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder})
+                    Utility.CreateObject("UIListLayout", {Parent = Objects["RightHolder"], FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Left, Padding = UDim_new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder})
+                end
+
+                do -- Box
+                    Objects["BoxGlow"] = Utility.CreateObject("ImageLabel", {Parent = Objects["TargetHolder"], Image = "rbxassetid://110204605000367", ScaleType = Enum.ScaleType.Slice, SliceCenter = Rect_new(Vector2_new(21, 21), Vector2_new(79, 79)), AutomaticSize = Enum.AutomaticSize.XY, ImageTransparency = 0.65, ResampleMode = Enum.ResamplerMode.Pixelated, Visible = true, BackgroundTransparency = 1, Position = UDim2_new(0, -21, 0, -21), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Objects["BoxGlowGradient"] = Utility.CreateObject("UIGradient", {Parent = Objects["BoxGlow"], Rotation = 90, Color = ColorSequence_new{ColorSequenceKeypoint_new(0, Color3_fromRGB(0, 0, 0)), ColorSequenceKeypoint_new(1, Color3_fromRGB(0, 0, 0))}, Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, 0), NumberSequenceKeypoint_new(1, 0)}})
+                    Utility.CreateObject("UIPadding", {Parent = Objects["BoxGlow"], PaddingTop = UDim_new(0, 21), PaddingBottom = UDim_new(0, 20), PaddingLeft = UDim_new(0, 21), PaddingRight = UDim_new(0, 20)})
+
+                    Objects["BoxOutlineHolder"] = Utility.CreateObject("Frame", {Parent = Objects["BoxGlow"], Visible = false, BackgroundTransparency = 1, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Objects["BoxOutline"] = Utility.CreateObject("UIStroke", {Parent = Objects["BoxOutlineHolder"], Thickness = 3, LineJoinMode = Enum.LineJoinMode.Miter})
+                    Objects["BoxOutlineGradient"] = Utility.CreateObject("UIGradient", {Parent = Objects["BoxOutline"], Rotation = 90, Color = ColorSequence_new{ColorSequenceKeypoint_new(0, Color3_fromRGB(0, 0, 0)), ColorSequenceKeypoint_new(1, Color3_fromRGB(0, 0, 0))}, Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, 0), NumberSequenceKeypoint_new(1, 0)}})
+
+                    Objects["BoxInlineHolder"] = Utility.CreateObject("Frame", {Parent = Objects["BoxGlow"], Visible = false, BackgroundTransparency = 1, Position = UDim2_new(0, -1, 0, -1), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Objects["BoxInline"] = Utility.CreateObject("UIStroke", {Parent = Objects["BoxInlineHolder"], Color = Color3_fromRGB(255, 255, 255), LineJoinMode = Enum.LineJoinMode.Miter})
+                    Objects["BoxInlineGradient"] = Utility.CreateObject("UIGradient", {Parent = Objects["BoxInline"], Rotation = 90, Color = ColorSequence_new{ColorSequenceKeypoint_new(0, Color3_fromRGB(0, 0, 0)), ColorSequenceKeypoint_new(1, Color3_fromRGB(255, 255, 255))}, Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, 0), NumberSequenceKeypoint_new(1, 0)}})
+
+                    Objects["BoxFill"] = Utility.CreateObject("Frame", {Parent = Objects["BoxGlow"], Visible = false, BackgroundTransparency = 0, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                    Objects["BoxFillGradient"] = Utility.CreateObject("UIGradient", {Parent = Objects["BoxFill"], Rotation = 90, Color = ColorSequence_new{ColorSequenceKeypoint_new(0, Color3_fromRGB(0, 0, 0)), ColorSequenceKeypoint_new(1, Color3_fromRGB(255, 255, 255))}, Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, 1), NumberSequenceKeypoint_new(1, 1)}})
+                end
+
+                do -- ConerBox
+                    Objects["CornerHolder"] = Utility.CreateObject("Frame", {Parent = Objects["BoxGlow"], Visible = false, BackgroundTransparency = 1, Position = UDim2_new(0, -1, 0, -1), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+
+                    for i = 1, 8 do
+                        Objects["Line_" .. i] = Utility.CreateObject("Frame", {Parent = Objects["CornerHolder"], Visible = false, BackgroundTransparency = 0, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(0, 0, 0, 0), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                        Utility.CreateObject("UIStroke", {Parent = Objects["Line_" .. i], Thickness = 1, LineJoinMode = Enum.LineJoinMode.Miter})
                     end
-                    MinimizedBar.Visible = true
                 end
-            end)
-        end
-    end
 
-    Services.Input.InputBegan:Connect(function(Input, Focused) 
-        if (Input == Setup.Keybind or Input.KeyCode == Setup.Keybind) and not Focused then
-            Close()
-        end
-    end)
+                do -- Bars
+                    for BarName, Bar in ESPSettings.Bars do
+                        Objects[BarName .. "Outline"] = Utility.CreateObject("Frame", {Parent = Objects[Bar.Position .. "BarHolder"], ZIndex = 5, LayoutOrder = 0, Visible = true, BackgroundTransparency = 0, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(1, 0, 0, 1), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(0, 0, 0)})
+                        Utility.CreateObject("UIStroke", {Parent = Objects[BarName .. "Outline"], Thickness = 1, LineJoinMode = Enum.LineJoinMode.Miter})
 
-    --// Tab Functions
-    function Options:SetTab(Name: string)
-        for Index, Button in next, Tab:GetChildren() do
-            if Button:IsA("TextButton") then
-                local IsOpen, SameName = Button.Value, (Button.Name == Name);
-                local Padding = Button:FindFirstChildOfClass("UIPadding");
-                if SameName and not IsOpen.Value then
-                    Tween(Padding, .25, { PaddingLeft = UDim.new(0, 25) });
-                    Tween(Button, .25, { BackgroundTransparency = 0.9, Size = UDim2.new(1, -15, 0, 30) });
-                    SetProperty(IsOpen, { Value = true });
-                elseif not SameName and IsOpen.Value then
-                    Tween(Padding, .25, { PaddingLeft = UDim.new(0, 20) });
-                    Tween(Button, .25, { BackgroundTransparency = 1, Size = UDim2.new(1, -44, 0, 30) });
-                    SetProperty(IsOpen, { Value = false });
-                end
-            end
-        end
-        for Index, Main in next, Holder:GetChildren() do
-            if Main:IsA("CanvasGroup") then
-                local IsOpen, SameName = Main.Value, (Main.Name == Name);
-                local Scroll = Main:FindFirstChild("ScrollingFrame");
-                if SameName and not IsOpen.Value then
-                    IsOpen.Value = true
-                    Main.Visible = true
-                    Tween(Main, .3, { GroupTransparency = 0 });
-                    Tween(Scroll["UIPadding"], .3, { PaddingTop = UDim.new(0, 5) });
-                elseif not SameName and IsOpen.Value then
-                    IsOpen.Value = false
-                    Tween(Main, .15, { GroupTransparency = 1 });
-                    Tween(Scroll["UIPadding"], .15, { PaddingTop = UDim.new(0, 15) });    
-                    task.delay(.2, function() Main.Visible = false end)
-                end
-            end
-        end
-    end
-
-    function Options:AddTabSection(Settings: { Name: string, Order: number })
-        local Example = Examples["SectionExample"];
-        local Section = Clone(Example);
-        StoredInfo["Sections"][Settings.Name] = (Settings.Order);
-        SetProperty(Section, { 
-            Parent = Example.Parent,
-            Text = Settings.Name,
-            Name = Settings.Name,
-            LayoutOrder = Settings.Order,
-            Visible = true
-        });
-    end
-
-    function Options:AddTab(Settings: { Title: string, Icon: string, Section: string? })
-        if StoredInfo["Tabs"][Settings.Title] then 
-            error("[UI LIB]: A tab with the same name has already been created") 
-        end 
-        local Example, MainExample = Examples["TabButtonExample"], Examples["MainExample"];
-        local Section = StoredInfo["Sections"][Settings.Section];
-        local Main = Clone(MainExample);
-        local Tab = Clone(Example);
-
-        if not Settings.Icon then
-            Destroy(Tab["ICO"]);
-        else
-            SetProperty(Tab["ICO"], { Image = resolveIcon(Settings.Icon) });
-        end
-
-        StoredInfo["Tabs"][Settings.Title] = { Tab }
-        SetProperty(Tab["TextLabel"], { Text = Settings.Title });
-        SetProperty(Main, { Parent = MainExample.Parent, Name = Settings.Title; });
-        SetProperty(Tab, { 
-            Parent = Example.Parent,
-            LayoutOrder = Section or #StoredInfo["Sections"] + 1,
-            Name = Settings.Title;
-            Visible = true;
-        });
-
-        Tab.MouseButton1Click:Connect(function() Options:SetTab(Tab.Name); end)
-        return Main.ScrollingFrame
-    end
-    
-    --// Notifications
-    function Options:Notify(Settings: { Title: string, Description: string, Duration: number }) 
-        local Notification = Clone(Components["Notification"]);
-        local Title, Description = Options:GetLabels(Notification);
-        local Timer = Notification["Timer"];
-        SetProperty(Title, { Text = Settings.Title });
-        SetProperty(Description, { Text = Settings.Description });
-        SetProperty(Notification, { Parent = Screen["Frame"] })
-        task.spawn(function() 
-            local Duration = Settings.Duration or 2
-            local Wait = task.wait;
-            Animations:Open(Notification, Setup.Transparency, true); Tween(Timer, Duration, { Size = UDim2.new(0, 0, 0, 4) });
-            Wait(Duration);
-            Animations:Close(Notification);
-            Wait(1);
-            Notification:Destroy();
-        end)
-    end
-
-    function Options:GetLabels(Component)
-        local Labels = Component:FindFirstChild("Labels")
-        return Labels.Title, Labels.Description
-    end
-
-    function Options:AddSection(Settings: { Name: string, Tab: Instance }) 
-        local Section = Clone(Components["Section"]);
-        SetProperty(Section, { Text = Settings.Name, Parent = Settings.Tab, Visible = true })
-    end
-    
-    function Options:AddButton(Settings: { Title: string, Description: string, Tab: Instance, Callback: any }) 
-        local Button = Clone(Components["Button"]);
-        local Title, Description = Options:GetLabels(Button);
-        Connect(Button.MouseButton1Click, Settings.Callback)
-        Animations:Component(Button)
-        SetProperty(Title, { Text = Settings.Title });
-        SetProperty(Description, { Text = Settings.Description });
-        SetProperty(Button, { Name = Settings.Title, Parent = Settings.Tab, Visible = true })
-    end
-
-    function Options:AddInput(Settings: { Title: string, Description: string, Tab: Instance, Callback: any }) 
-        local Input = Clone(Components["Input"]);
-        local Title, Description = Options:GetLabels(Input);
-        local TextBox = Input["Main"]["Input"];
-        Connect(Input.MouseButton1Click, function() TextBox:CaptureFocus() end)
-        Connect(TextBox.FocusLost, function() Settings.Callback(TextBox.Text) end)
-        Animations:Component(Input)
-        SetProperty(Title, { Text = Settings.Title });
-        SetProperty(Description, { Text = Settings.Description });
-        SetProperty(Input, { Name = Settings.Title, Parent = Settings.Tab, Visible = true })
-    end
-
-    function Options:AddToggle(Settings: { Title: string, Description: string, Default: boolean, Tab: Instance, Callback: any }) 
-        local Toggle = Clone(Components["Toggle"]);
-        local Title, Description = Options:GetLabels(Toggle);
-        local On = Toggle["Value"];
-        local Main = Toggle["Main"];
-        local Circle = Main["Circle"];
-        local Set = function(Value)
-            if Value then
-                Tween(Main,   .2, { BackgroundColor3 = Color3.fromRGB(153, 155, 255) });
-                Tween(Circle, .2, { BackgroundColor3 = Color3.fromRGB(255, 255, 255), Position = UDim2.new(1, -16, 0.5, 0) });
-            else
-                Tween(Main,   .2, { BackgroundColor3 = Theme.Interactables });
-                Tween(Circle, .2, { BackgroundColor3 = Theme.Primary, Position = UDim2.new(0, 3, 0.5, 0) });
-            end
-            On.Value = Value
-        end 
-        Connect(Toggle.MouseButton1Click, function()
-            local Value = not On.Value
-            Set(Value)
-            Settings.Callback(Value)
-        end)
-        Animations:Component(Toggle);
-        Set(Settings.Default);
-        SetProperty(Title, { Text = Settings.Title });
-        SetProperty(Description, { Text = Settings.Description });
-        SetProperty(Toggle, { Name = Settings.Title, Parent = Settings.Tab, Visible = true })
-    end
-    
-    function Options:AddKeybind(Settings: { Title: string, Description: string, Tab: Instance, Callback: any }) 
-        local Dropdown = Clone(Components["Keybind"]);
-        local Title, Description = Options:GetLabels(Dropdown);
-        local Bind = Dropdown["Main"].Options;
-        local Mouse = { Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.MouseButton3 }; 
-        local Types = { ["Mouse"] = "Enum.UserInputType.MouseButton", ["Key"] = "Enum.KeyCode." }
-        Connect(Dropdown.MouseButton1Click, function()
-            local Detect, Finished
-            SetProperty(Bind, { Text = "..." });
-            Detect = Connect(game.UserInputService.InputBegan, function(Key, Focused) 
-                local InputType = (Key.UserInputType);
-                if not Finished and not Focused then
-                    Finished = (true)
-                    if table.find(Mouse, InputType) then
-                        Settings.Callback(Key);
-                        SetProperty(Bind, { Text = tostring(InputType):gsub(Types.Mouse, "MB") })
-                    elseif InputType == Enum.UserInputType.Keyboard then
-                        Settings.Callback(Key);
-                        SetProperty(Bind, { Text = tostring(Key.KeyCode):gsub(Types.Key, "") })
+                        Objects[BarName] = Utility.CreateObject("Frame", {Parent = Objects[BarName .. "Outline"], ZIndex = 6, LayoutOrder = 0, Visible = true, BackgroundTransparency = 0, Position = UDim2_new(0, 0, 0, 0), BorderColor3 = Color3_fromRGB(0, 0, 0), Size = UDim2_new(1, 0, 0, 1), BorderSizePixel = 0, BackgroundColor3 = Color3_fromRGB(255, 255, 255)})
+                        Objects[BarName .. "Gradient"] = Utility.CreateObject("UIGradient", {Parent = Objects[BarName], Rotation = 90, Color = ColorSequence_new{ColorSequenceKeypoint_new(0, Color3_fromRGB(0, 0, 0)), ColorSequenceKeypoint_new(0, Color3_fromRGB(0, 0, 0)), ColorSequenceKeypoint_new(1, Color3_fromRGB(255, 255, 255))}, Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, 0), NumberSequenceKeypoint_new(1, 0)}})
+                    
+                        Objects[BarName .. "Text"] = Utility.CreateObject("TextLabel", {
+                            Parent = Objects[Bar.Position .. "TextHolder"],
+                            FontFace = ESPFont,
+                            TextSize = ESPFontSize,
+                            LayoutOrder = 2,
+                            TextColor3 = Color3_fromRGB(255, 255, 255),
+                            Text = "",
+                            AnchorPoint = Vector2_new(0, 1),
+                            BorderSizePixel = 0,
+                            Visible = false,
+                            BackgroundTransparency = 1,
+                            ZIndex = 5,
+                            AutomaticSize = Enum.AutomaticSize.Y,
+                            Size = UDim2_new(1, 0, 0, 0)
+                        }); Utility.CreateObject("UIStroke", {Parent = Objects[BarName .. "Text"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
                     end
-                end 
-            end)
-        end)
-        Animations:Component(Dropdown);
-        SetProperty(Title, { Text = Settings.Title });
-        SetProperty(Description, { Text = Settings.Description });
-        SetProperty(Dropdown, { Name = Settings.Title, Parent = Settings.Tab, Visible = true })
-    end
-
-    function Options:AddDropdown(Settings: { Title: string, Description: string, Options: {}, Tab: Instance, Callback: any }) 
-        local Dropdown = Clone(Components["Dropdown"]);
-        local Title, Description = Options:GetLabels(Dropdown);
-        local Text = Dropdown["Main"].Options;
-        Connect(Dropdown.MouseButton1Click, function()
-            local Example = Clone(Examples["DropdownExample"]);
-            local Buttons = Example["Top"]["Buttons"];
-            Tween(BG, .25, { BackgroundTransparency = 0.6 });
-            SetProperty(Example, { Parent = Window });
-            Animations:Open(Example, 0, true)
-            for Index, Button in next, Buttons:GetChildren() do
-                if Button:IsA("TextButton") then
-                    Animations:Component(Button, true)
-                    Connect(Button.MouseButton1Click, function()
-                        Tween(BG, .25, { BackgroundTransparency = 1 });
-                        Animations:Close(Example);
-                        task.wait(2)
-                        Destroy(Example);
-                    end)
                 end
+
+                do -- Texts
+                    Objects["TargetName"] = Utility.CreateObject("TextLabel", {
+                        Parent = Objects["TopTextHolder"],
+                        FontFace = ESPFont,
+                        TextSize = ESPFontSize,
+                        LayoutOrder = 2,
+                        TextColor3 = Color3_fromRGB(255, 255, 255),
+                        Text = "",
+                        AnchorPoint = Vector2_new(0, 1),
+                        BorderSizePixel = 0,
+                        Visible = false,
+                        BackgroundTransparency = 1,
+                        ZIndex = 5,
+                        AutomaticSize = Enum.AutomaticSize.Y,
+                        Size = UDim2_new(1, 0, 0, 0)
+                    }); Utility.CreateObject("UIStroke", {Parent = Objects["TargetName"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
+
+                    Objects["Distance"] = Utility.CreateObject("TextLabel", {
+                        Parent = Objects["BottomTextHolder"],
+                        FontFace = ESPFont,
+                        TextSize = ESPFontSize,
+                        LayoutOrder = 2,
+                        TextColor3 = Color3_fromRGB(255, 255, 255),
+                        Text = "",
+                        AnchorPoint = Vector2_new(0, 1),
+                        BorderSizePixel = 0,
+                        Visible = false,
+                        BackgroundTransparency = 1,
+                        ZIndex = 5,
+                        AutomaticSize = Enum.AutomaticSize.Y,
+                        Size = UDim2_new(1, 0, 0, 0)
+                    }); Utility.CreateObject("UIStroke", {Parent = Objects["Distance"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
+
+                    Objects["Flags"] = Utility.CreateObject("TextLabel", {
+                        Parent = Objects["RightTextHolder"],
+                        FontFace = ESPFont,
+                        TextSize = ESPFontSize,
+                        LayoutOrder = 2,
+                        TextColor3 = Color3_fromRGB(255, 255, 255),
+                        Text = "",
+                        AnchorPoint = Vector2_new(0, 1),
+                        BorderSizePixel = 0,
+                        Visible = false,
+                        BackgroundTransparency = 1,
+                        ZIndex = 5,
+                        AutomaticSize = Enum.AutomaticSize.Y,
+                        Size = UDim2_new(1, 0, 0, 0)
+                    }); Utility.CreateObject("UIStroke", {Parent = Objects["Flags"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
+
+                    Objects["Weapon"] = Utility.CreateObject("TextLabel", {
+                        Parent = Objects["BottomTextHolder"],
+                        FontFace = ESPFont,
+                        TextSize = ESPFontSize,
+                        LayoutOrder = 2,
+                        TextColor3 = Color3_fromRGB(255, 255, 255),
+                        Text = "none",
+                        AnchorPoint = Vector2_new(0, 1),
+                        BorderSizePixel = 0,
+                        Visible = false,
+                        BackgroundTransparency = 1,
+                        ZIndex = 5,
+                        AutomaticSize = Enum.AutomaticSize.Y,
+                        Size = UDim2_new(1, 0, 0, 0)
+                    }); Utility.CreateObject("UIStroke", {Parent = Objects["Weapon"], Color = Color3_fromRGB(0, 0, 0), LineJoinMode = Enum.LineJoinMode.Miter})
+                end
+
+                ESP.Targets[Type][Target] = TargetInfo
             end
-            for Index, Option in next, Settings.Options do
-                local Button = Clone(Examples["DropdownButtonExample"]);
-                local Title, Description = Options:GetLabels(Button);
-                local Selected = Button["Value"];
-                Animations:Component(Button);
-                SetProperty(Title, { Text = Index });
-                SetProperty(Button, { Parent = Example.ScrollingFrame, Visible = true });
-                Destroy(Description);
-                Connect(Button.MouseButton1Click, function() 
-                    local NewValue = not Selected.Value 
-                    if NewValue then
-                        Tween(Button, .25, { BackgroundColor3 = Theme.Interactables });
-                        Settings.Callback(Option)
-                        Text.Text = Index
-                        for _, Others in next, Example:GetChildren() do
-                            if Others:IsA("TextButton") and Others ~= Button then
-                                Others.BackgroundColor3 = Theme.Component
+
+            function TargetInfo.Update()
+                if (os_clock() - LastTick) < (1 / ESPSettings.RefreshRate) then return end
+                if not CharacterObjects.Children then return end
+                if not CharacterObjects.Descendants then return end
+
+                local CurrentChildren = PlayerHelper.GetChildren(CharacterObjects.Character)
+                local CurrentDescendants = PlayerHelper.GetDescendants(CharacterObjects.Character)
+
+                if #CharacterObjects.Children ~= #CurrentChildren then
+                    CharacterObjects.Children = CurrentChildren
+
+                    return
+                end
+
+                if #CharacterObjects.Descendants ~= #CurrentDescendants then
+                    CharacterObjects.Descendants = CurrentDescendants
+
+                    return
+                end
+
+                LastTick = os_clock()
+                Objects["TargetHolder"].Visible = false
+                Objects["Highlight"].Enabled = false
+
+                if (not ESPSettings.LocalPlayer) and Target == Client then return end
+                if not CharacterObjects.Character then return end
+                if IsPlayer then
+                    if not CharacterObjects.HumanoidRootPart then
+                        if CharacterObjects.Character then
+                            CharacterObjects.HumanoidRootPart = FindFirstChild(CharacterObjects.Character, "HumanoidRootPart")
+                        end
+
+                        return
+                    end
+                    
+                    if not CharacterObjects.Humanoid then
+                        if CharacterObjects.Character then
+                            CharacterObjects.Humanoid = FindFirstChildWhichIsA(CharacterObjects.Character, "Humanoid")
+                        end
+
+                        return
+                    end
+                else
+                    if not CharacterObjects.HumanoidRootPart then
+                        if IsA(Target, "BasePart") then
+                            CharacterObjects.HumanoidRootPart = Target
+                        elseif CharacterObjects.Character and CharacterObjects.Character.PrimaryPart then
+                            CharacterObjects.HumanoidRootPart = CharacterObjects.Character.PrimaryPart
+                        end
+
+                        return
+                    end
+                end
+
+                local Distance = (Camera.CFrame.Position - CharacterObjects.HumanoidRootPart.Position).Magnitude
+                if Distance > ESPSettings.MaxDistance then return end
+
+                local BodyParts = if ESPSettings.BoundingBox.IncludeAccessories then CharacterObjects.Descendants else CharacterObjects.Children
+                local BoxWidth, BoxHeight, BoxPositionX, BoxPositionY, OnScreen = Utility.CalculateBox(ESPSettings, Target, CharacterObjects.HumanoidRootPart, (if IsBasePart then {Target} else BodyParts))
+                
+                if not OnScreen then
+                    Objects["TargetHolder"].Visible = false
+                    Objects["Highlight"].Enabled = false
+                    return
+                end
+
+                local BoxSize, BoxPosition = UDim2_fromOffset(math_floor(BoxWidth), math_floor(BoxHeight)), UDim2_fromOffset(math_floor(BoxPositionX), math_floor(BoxPositionY))
+                local TargetHolder = Objects["TargetHolder"]; do
+                    TargetHolder.Visible = true
+                    if TargetHolder.Position ~= BoxPosition then TargetHolder.Position = BoxPosition end
+                    if TargetHolder.Size ~= BoxSize then TargetHolder.Size = BoxSize end
+                end
+
+                local BoxOutline, BoxInline, BoxFill, BoxGlow = Objects["BoxOutline"], Objects["BoxInline"], Objects["BoxFill"], Objects["BoxGlow"]; do
+                    local BoxEnabled, BoxColor, BoxTransparency, BoxRotation, BoxType = ESPSettings.BoundingBox.Enabled, ESPSettings.BoundingBox.Color, ESPSettings.BoundingBox.Transparency, ESPSettings.BoundingBox.Rotation, ESPSettings.BoundingBox.Type
+
+                    if BoxEnabled then
+                        local BoxGlowGradient = Objects["BoxGlowGradient"]; do
+                            local BoxGlowEnabled, BoxGlowColor, BoxGlowTransparency, BoxGlowRotation = ESPSettings.BoundingBox.Glow.Enabled, ESPSettings.BoundingBox.Glow.Color, ESPSettings.BoundingBox.Glow.Transparency, ESPSettings.BoundingBox.Glow.Rotation
+
+                            if BoxGlowEnabled then
+                                BoxGlow.ImageTransparency = 0
+                                BoxGlowGradient.Rotation = BoxGlowRotation
+                                BoxGlowGradient.Color = ColorSequence_new{ColorSequenceKeypoint_new(0, BoxGlowColor[1]), ColorSequenceKeypoint_new(1, BoxGlowColor[2])}
+                                BoxGlowGradient.Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, BoxGlowTransparency[1]), NumberSequenceKeypoint_new(1, BoxGlowTransparency[2])}
+                            else
+                                BoxGlow.ImageTransparency = 1
+                            end
+                        end
+
+                        if BoxType == "2D" then
+                            BoxOutline.Parent.Visible = true
+                            BoxOutline.Parent.Size = UDim2_fromOffset(BoxWidth, BoxHeight)
+                            BoxInline.Parent.Visible = true
+                            BoxInline.Parent.Size = UDim2_fromOffset(BoxWidth + 2, BoxHeight + 2)
+
+                            local BoxInlineGradient, BoxOutlineGradient = Objects["BoxInlineGradient"], Objects["BoxOutlineGradient"]; do
+                                BoxInlineGradient.Color = ColorSequence_new{ColorSequenceKeypoint_new(0, BoxColor[1]), ColorSequenceKeypoint_new(1, BoxColor[2])}
+                                BoxInlineGradient.Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, BoxTransparency[1]), NumberSequenceKeypoint_new(1, BoxTransparency[2])}
+                                BoxInlineGradient.Rotation = BoxRotation
+
+                                BoxOutlineGradient.Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, BoxTransparency[1]), NumberSequenceKeypoint_new(1, BoxTransparency[2])}
+                                BoxOutlineGradient.Rotation = BoxRotation
+                            end
+
+                            local BoxFillGradient = Objects["BoxFillGradient"]; do
+                                local BoxFillColor, BoxFillTransparency, BoxFillRotation = ESPSettings.BoundingBox.Fill.Color, ESPSettings.BoundingBox.Fill.Transparency, ESPSettings.BoundingBox.Fill.Rotation
+
+                                BoxFill.Visible = ESPSettings.BoundingBox.Fill.Enabled
+                                BoxFill.Size = UDim2_fromOffset(BoxWidth, BoxHeight)
+                                BoxFillGradient.Rotation = BoxFillRotation
+                                BoxFillGradient.Color = ColorSequence_new{ColorSequenceKeypoint_new(0, BoxFillColor[1]), ColorSequenceKeypoint_new(1, BoxFillColor[2])}
+                                BoxFillGradient.Transparency = NumberSequence_new{NumberSequenceKeypoint_new(0, BoxFillTransparency[1]), NumberSequenceKeypoint_new(1, BoxFillTransparency[2])}
+                            end
+                        else
+                            local CornerHolder = Objects["CornerHolder"]; do
+                                CornerHolder.Visible = true
+                                CornerHolder.Size = UDim2_fromOffset(BoxWidth + 2, BoxHeight + 2)
+                            end
+
+                            for i = 1, 8 do
+                                local Line = Objects["Line_" .. i]
+                                local Stroke = Line.UIStroke
+                                local LayoutPosition = Layout[i]
+                                local Position, Size, AnchorPoint, Rotation = LayoutPosition[1], LayoutPosition[2], LayoutPosition[3], LayoutPosition[4]
+
+                                Stroke.Transparency = BoxTransparency[1]
+
+                                Line.Position = Position
+                                Line.Rotation = Rotation
+                                Line.BackgroundColor3 = BoxColor[1]
+                                Line.BackgroundTransparency = BoxTransparency[1]
+                                Line.Size = Size
+                                Line.AnchorPoint = AnchorPoint
+                                Line.Visible = true
                             end
                         end
                     else
-                        Tween(Button, .25, { BackgroundColor3 = Theme.Component });
-                    end
-                    Selected.Value = NewValue
-                    Tween(BG, .25, { BackgroundTransparency = 1 });
-                    Animations:Close(Example);
-                    task.wait(2)
-                    Destroy(Example);
-                end)
-            end
-        end)
-        Animations:Component(Dropdown);
-        SetProperty(Title, { Text = Settings.Title });
-        SetProperty(Description, { Text = Settings.Description });
-        SetProperty(Dropdown, { Name = Settings.Title, Parent = Settings.Tab, Visible = true })
-    end
+                        BoxGlow.ImageTransparency = 1
+                        BoxOutline.Parent.Visible = false
+                        BoxInline.Parent.Visible = false
+                        BoxFill.Visible = false
 
-    function Options:AddSlider(Settings: { Title: string, Description: string, MaxValue: number, AllowDecimals: boolean, DecimalAmount: number, Tab: Instance, Callback: any }) 
-        local Slider = Clone(Components["Slider"]);
-        local Title, Description = Options:GetLabels(Slider);
-        local Main = Slider["Slider"];
-        local Amount = Main["Main"].Input;
-        local Slide = Main["Slide"];
-        local Fire = Slide["Fire"];
-        local Fill = Slide["Highlight"];
-        local Circle = Fill["Circle"];
-        local Active = false
-        local Value = 0
-        local SetNumber = function(Number)
-            if Settings.AllowDecimals then
-                local Power = 10 ^ (Settings.DecimalAmount or 2)
-                Number = math.floor(Number * Power + 0.5) / Power
-            else
-                Number = math.round(Number)
-            end
-            return Number
-        end
-        local Update = function(Number)
-            local Scale = (Player.Mouse.X - Slide.AbsolutePosition.X) / Slide.AbsoluteSize.X            
-            Scale = (Scale > 1 and 1) or (Scale < 0 and 0) or Scale
-            if Number then
-                Number = (Number > Settings.MaxValue and Settings.MaxValue) or (Number < 0 and 0) or Number
-            end
-            Value = SetNumber(Number or (Scale * Settings.MaxValue))
-            Amount.Text = Value
-            Fill.Size = UDim2.fromScale((Number and Number / Settings.MaxValue) or Scale, 1)
-            Settings.Callback(Value)
-        end
-        local Activate = function()
-            Active = true
-            repeat task.wait() Update() until not Active
-        end
-        Connect(Amount.FocusLost, function() Update(tonumber(Amount.Text) or 0) end)
-        Connect(Fire.MouseButton1Down, Activate)
-        Connect(Services.Input.InputEnded, function(Input) 
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-                Active = false
-            end
-        end)
-        Fill.Size = UDim2.fromScale(Value, 1);
-        Animations:Component(Slider);
-        SetProperty(Title, { Text = Settings.Title });
-        SetProperty(Description, { Text = Settings.Description });
-        SetProperty(Slider, { Name = Settings.Title, Parent = Settings.Tab, Visible = true })
-    end
-
-    function Options:AddParagraph(Settings: { Title: string, Description: string, Tab: Instance }) 
-        local Paragraph = Clone(Components["Paragraph"]);
-        local Title, Description = Options:GetLabels(Paragraph);
-        SetProperty(Title, { Text = Settings.Title });
-        SetProperty(Description, { Text = Settings.Description });
-        SetProperty(Paragraph, { Parent = Settings.Tab, Visible = true })
-    end
-
-    local Themes = {
-        Names = {    
-            ["Paragraph"] = function(Label) if Label:IsA("TextButton") then Label.BackgroundColor3 = Color(Theme.Component, 5, "Dark"); end end,
-            ["Title"] = function(Label) if Label:IsA("TextLabel") then Label.TextColor3 = Theme.Title end end,
-            ["Description"] = function(Label) if Label:IsA("TextLabel") then Label.TextColor3 = Theme.Description end end,
-            ["Section"] = function(Label) if Label:IsA("TextLabel") then Label.TextColor3 = Theme.Title end end,
-            ["Options"] = function(Label) if Label:IsA("TextLabel") and Label.Parent.Name == "Main" then Label.TextColor3 = Theme.Title end end,
-            ["Notification"] = function(Label) if Label:IsA("CanvasGroup") then Label.BackgroundColor3 = Theme.Primary; Label.UIStroke.Color = Theme.Outline end end,
-            ["TextLabel"] = function(Label) if Label:IsA("TextLabel") and Label.Parent:FindFirstChild("List") then Label.TextColor3 = Theme.Tab end end,
-            ["Main"] = function(Label)
-                if Label:IsA("Frame") then
-                    if Label.Parent == Window then
-                        Label.BackgroundColor3 = Theme.Secondary
-                    elseif Label.Parent:FindFirstChild("Value") then
-                        local Toggle = Label.Parent.Value 
-                        local Circle = Label:FindFirstChild("Circle")
-                        if not Toggle.Value then
-                            Label.BackgroundColor3 = Theme.Interactables
-                            Label.Circle.BackgroundColor3 = Theme.Primary
+                        for i = 1, 8 do
+                            local Line = Objects["Line_" .. i]
+                            
+                            Line.Visible = false
                         end
-                    else
-                        Label.BackgroundColor3 = Theme.Interactables
                     end
-                elseif Label:FindFirstChild("Padding") then
-                    Label.TextColor3 = Theme.Title
                 end
-            end,
-            ["Amount"] = function(Label) if Label:IsA("Frame") then Label.BackgroundColor3 = Theme.Interactables end end,
-            ["Slide"] = function(Label) if Label:IsA("Frame") then Label.BackgroundColor3 = Theme.Interactables end end,
-            ["Input"] = function(Label)
-                if Label:IsA("TextLabel") then Label.TextColor3 = Theme.Title
-                elseif Label:FindFirstChild("Labels") then Label.BackgroundColor3 = Theme.Component
-                elseif Label:IsA("TextBox") and Label.Parent.Name == "Main" then Label.TextColor3 = Theme.Title end
-            end,
-            ["Outline"] = function(Stroke) if Stroke:IsA("UIStroke") then Stroke.Color = Theme.Outline end end,
-            ["DropdownExample"] = function(Label) Label.BackgroundColor3 = Theme.Secondary end,
-            ["Underline"] = function(Label) if Label:IsA("Frame") then Label.BackgroundColor3 = Theme.Outline end end,
-        },
-        Classes = {
-            ["ImageLabel"] = function(Label)
-                if Label.Image ~= "rbxassetid://6644618143" then Label.ImageColor3 = Theme.Icon end
-            end,
-            ["TextLabel"] = function(Label)
-                if Label:FindFirstChild("Padding") then Label.TextColor3 = Theme.Title end
-            end,
-            ["TextButton"] = function(Label)
-                if Label:FindFirstChild("Labels") then Label.BackgroundColor3 = Theme.Component end
-            end,
-            ["ScrollingFrame"] = function(Label) Label.ScrollBarImageColor3 = Theme.Component end,
-        },
-    }
 
-    function Options:SetTheme(Info)
-        Theme = Info or Theme
-        Window.BackgroundColor3 = Theme.Primary
-        Holder.BackgroundColor3 = Theme.Secondary
-        Window.UIStroke.Color = Theme.Shadow
-        for Index, Descendant in next, Screen:GetDescendants() do
-            local Name, Class = Themes.Names[Descendant.Name], Themes.Classes[Descendant.ClassName]
-            if Name then Name(Descendant);
-            elseif Class then Class(Descendant); end
+                for BarName, BarInfo in ESPSettings.Bars do
+                    local Bar, BarOutline, BarGradient = Objects[BarName], Objects[BarName .. "Outline"], Objects[BarName .. "Gradient"]; do
+                        local BarEnabled, BarColor, BarTransparency = BarInfo.Enabled, BarInfo.Color, BarInfo.Transparency
+                        local NewParent = Objects[`{BarInfo.Position}BarHolder`]
+
+                        if BarEnabled and IsPlayer then
+                            local BarValue = BarInfo.Type(Target, CharacterObjects)
+                            local BarSizes = {
+                                ["Top"] = UDim2_new(BarValue, 0, 0, 1),
+                                ["Bottom"] = UDim2_new(BarValue, 0, 0, 1),
+                                ["Left"] = UDim2_new(0, 1, BarValue, 0),
+                                ["Right"] = UDim2_new(0, 1, BarValue, 0),
+                            }
+
+                            local OutlineSizes = {
+                                ["Top"] = UDim2_new(1, 0, 0, 1),
+                                ["Bottom"] = UDim2_new(1, 0, 0, 1),
+                                ["Left"] = UDim2_new(0, 1, 1, 0),
+                                ["Right"] = UDim2_new(0, 1, 1, 0),
+                            }
+
+                            local GradientRotations = {
+                                ["Top"] = {-180, Vector2_new(1 - BarValue, 0)},
+                                ["Bottom"] = {-180, Vector2_new(1 - BarValue, 0)},
+                                ["Left"] = {90, Vector2_new(0, BarValue - 1)},
+                                ["Right"] = {90, Vector2_new(0, BarValue - 1)},
+                            }
+
+                            local BarPositions = {
+                                ["Top"] = {Vector2_new(0, 0), UDim2_new(0, 0, 0, 0)},
+                                ["Bottom"] = {Vector2_new(0, 0), UDim2_new(0, 0, 0, 0)},
+                                ["Left"] = {Vector2_new(0, 1), UDim2_new(0, 0, 1, 0)},
+                                ["Right"] = {Vector2_new(0, 1), UDim2_new(0, 0, 1, 0)},
+                            }
+
+                            NewParent.Visible = true
+
+                            Bar.AnchorPoint = BarPositions[BarInfo.Position][1]
+                            Bar.Position = BarPositions[BarInfo.Position][2]
+                            Bar.Size = BarSizes[BarInfo.Position]
+
+                            BarOutline.Parent = NewParent
+                            BarOutline.Size = OutlineSizes[BarInfo.Position]
+
+                            BarGradient.Rotation = GradientRotations[BarInfo.Position][1]
+                            BarGradient.Offset = GradientRotations[BarInfo.Position][2]
+                            BarGradient.Color = ColorSequence_new{ColorSequenceKeypoint_new(0, BarColor[1]), ColorSequenceKeypoint_new(0, BarColor[2]), ColorSequenceKeypoint_new(1, BarColor[3])}
+                        else
+                            NewParent.Visible = false
+                        end
+                    end
+
+                    local BarText = Objects[BarName .. "Text"]; do
+                        local BarTextEnabled, BarTextColor, BarTextTransparency = BarInfo.Text.Enabled, BarInfo.Text.Color, BarInfo.Text.Transparency
+                        local AnchorPoints = {
+                            ["Top"] = Vector2_new(0, 0.5),
+                            ["Bottom"] = Vector2_new(0, 0.5),
+                            ["Left"] = Vector2_new(0.5, 0),
+                            ["Right"] = Vector2_new(0.5, 0),
+                        }
+
+                        local Alignments = {
+                            ["Top"] = Enum.TextXAlignment.Right,
+                            ["Bottom"] = Enum.TextXAlignment.Right,
+                            ["Left"] = Enum.TextXAlignment.Center,
+                            ["Right"] = Enum.TextXAlignment.Center,
+                        }
+
+                        if BarTextEnabled and IsPlayer then
+                            local TextValue, TextVisible = BarInfo.Text.Type(Target, CharacterObjects)
+
+                            BarText.Text = `{tostring(math_floor(TextValue))}{BarInfo.Text.Ending}`
+                            BarText.TextColor3 = BarTextColor
+                            BarText.TextTransparency = BarTextTransparency
+                            BarText.UIStroke.Transparency = BarTextTransparency
+
+                            if BarInfo.Text.FollowBar then
+                                BarText.Visible = TextVisible
+                                BarText.Parent = Bar
+                                BarText.ZIndex = 10
+                                BarText.TextXAlignment = Alignments[BarInfo.Position]
+                                BarText.AnchorPoint = AnchorPoints[BarInfo.Position]
+                            else
+                                BarText.Visible = true
+                                BarText.Parent = Objects[`{BarInfo.Text.Position}TextHolder`]
+                                BarText.TextXAlignment = TextAlignments[BarInfo.Text.Position]
+                                BarText.AnchorPoint = Vector2_new(0, 0)
+                            end
+                        else
+                            BarText.Visible = false
+                        end
+                    end
+                end
+
+                local Chams = Objects["Highlight"]; do
+                    local ChamsEnabled, ChamsFill, ChamsOutline = ESPSettings.Chams.Enabled, ESPSettings.Chams.Fill, ESPSettings.Chams.Outline
+                    
+                    if ChamsEnabled then
+                        Chams.Enabled = true
+                        Chams.DepthMode = ESPSettings.Chams.DepthMode
+                        Chams.FillColor = ChamsFill[1]
+                        Chams.FillTransparency = ChamsFill[2]
+                        Chams.OutlineColor = ChamsOutline[1]
+                        Chams.OutlineTransparency = ChamsOutline[2]
+                    else
+                        Chams.Enabled = false
+                    end
+                end
+
+                local NameText = Objects["TargetName"]; do
+                    local NameEnabled, NameColor, NameTransparency = ESPSettings.Name.Enabled, ESPSettings.Name.Color, ESPSettings.Name.Transparency
+                    
+                    if NameEnabled then
+                        local TargetName = if ESPSettings.Name.UseDisplay then (IsPlayer and Target.DisplayName or Target.Name) else Target.Name
+
+                        NameText.Visible = true
+                        NameText.Text = Utility.GetFontType(ESPSettings, TargetName)
+                        NameText.TextXAlignment = TextAlignments[ESPSettings.Name.Position]
+                        NameText.Parent = Objects[`{ESPSettings.Name.Position}TextHolder`]
+                        NameText.TextColor3 = NameColor
+                        NameText.TextTransparency = NameTransparency
+                        NameText.UIStroke.Transparency = NameTransparency
+                    else
+                        NameText.Visible = false
+                    end
+                end
+
+                local DistanceText = Objects["Distance"]; do
+                    local DistanceEnabled, DistanceColor, DistanceTransparency = ESPSettings.Distance.Enabled, ESPSettings.Distance.Color, ESPSettings.Distance.Transparency
+                    
+                    if DistanceEnabled then
+                        DistanceText.Visible = true
+                        DistanceText.TextXAlignment = TextAlignments[ESPSettings.Distance.Position]
+                        DistanceText.Parent = Objects[`{ESPSettings.Distance.Position}TextHolder`]
+                        DistanceText.TextColor3 = DistanceColor
+                        DistanceText.TextTransparency = DistanceTransparency
+                        DistanceText.UIStroke.Transparency = DistanceTransparency
+                        DistanceText.Text = Utility.GetFontType(ESPSettings, `{tostring(math_floor(Distance))}{ESPSettings.Distance.Ending}`)
+                    else
+                        DistanceText.Visible = false
+                    end
+                end
+
+                local WeaponText = Objects["Weapon"]; do
+                    local WeaponEnabled, WeaponColor, WeaponTransparency = ESPSettings.Weapon.Enabled, ESPSettings.Weapon.Color, ESPSettings.Weapon.Transparency
+                    
+                    if IsPlayer and WeaponEnabled then
+                        local Tool = PlayerHelper.GetTool(Target) or TargetInfo.CurrentTool
+
+                        WeaponText.Visible = true
+                        WeaponText.TextXAlignment = TextAlignments[ESPSettings.Weapon.Position]
+                        WeaponText.Parent = Objects[`{ESPSettings.Weapon.Position}TextHolder`]
+                        WeaponText.TextColor3 = WeaponColor
+                        WeaponText.TextTransparency = WeaponTransparency
+                        WeaponText.UIStroke.Transparency = WeaponTransparency
+                        WeaponText.Text = Utility.GetFontType(ESPSettings, Tool)
+                    else
+                        WeaponText.Visible = false
+                    end
+                end
+
+                local FlagsText = Objects["Flags"]; do
+                    local FlagsEnabled, FlagsColor, FlagsTransparency = ESPSettings.Flags.Enabled, ESPSettings.Flags.Color, ESPSettings.Flags.Transparency
+                    
+                    if FlagsEnabled then
+                        local Flags = ESPSettings.Flags.Type(Target, CharacterObjects)
+
+                        FlagsText.Visible = true
+                        FlagsText.TextXAlignment = TextAlignments[ESPSettings.Flags.Position]
+                        FlagsText.Parent = Objects[`{ESPSettings.Flags.Position}TextHolder`]
+                        FlagsText.TextColor3 = FlagsColor
+                        FlagsText.TextTransparency = FlagsTransparency
+                        FlagsText.UIStroke.Transparency = FlagsTransparency
+                        FlagsText.Text = table_concat(Flags, "\n")
+                    else
+                        FlagsText.Visible = false
+                    end
+                end
+            end
+
+            function TargetInfo.Remove()
+                for _, Object in Objects do
+                    Object:Destroy()
+                end
+
+                if TargetInfo.CharacterConnection then
+                    TargetInfo.CharacterConnection:Disconnect()
+                    TargetInfo.CharacterConnection = nil
+                end
+
+                if ToolConnection.Added then
+                    ToolConnection.Added:Disconnect()
+                    ToolConnection.Added = nil
+                end
+
+                if ToolConnection.Removed then
+                    ToolConnection.Removed:Disconnect()
+                    ToolConnection.Removed = nil
+                end
+
+                ESP.Targets[Type][Target] = nil
+            end
         end
-        -- Update Show UI text color too
-        if MinimizedBar then
-            local ShowBtn = MinimizedBar:FindFirstChildOfClass("TextButton")
-            if ShowBtn then ShowBtn.TextColor3 = Theme.Title end
+
+        TargetInfo.Init()
+    end
+    
+    function ESP.RemoveTarget(NewTarget, Type)
+        for Type, _ in ESP.Settings do
+            for Target, TargetInfo in ESP.Targets[Type] do
+                if Target == NewTarget then
+                    TargetInfo.Remove()
+                end
+            end
         end
     end
 
-    function Options:SetSetting(Setting, Value)
-        if Setting == "Size" then
-            Window.Size = Value; Setup.Size = Value
-        elseif Setting == "Transparency" then
-            Window.GroupTransparency = Value; Setup.Transparency = Value
-            for Index, Notification in next, Screen:GetDescendants() do
-                if Notification:IsA("CanvasGroup") and Notification.Name == "Notification" then
-                    Notification.GroupTransparency = Value
-                end
-            end
-        elseif Setting == "Blur" then
-            local AlreadyBlurred, Root = Blurs[Settings.Title], nil
-            if AlreadyBlurred then Root = Blurs[Settings.Title]["root"] end
-            if Value then
-                BlurEnabled = true
-                if not AlreadyBlurred or not Root then
-                    Blurs[Settings.Title] = Blur.new(Window, 5)
-                elseif Root and not Root.Parent then
-                    Root.Parent = workspace.CurrentCamera
-                end
-            elseif not Value and (AlreadyBlurred and Root and Root.Parent) then
-                Root.Parent = nil; BlurEnabled = false
-            end
-        elseif Setting == "Theme" and typeof(Value) == "table" then
-            Options:SetTheme(Value)
-        elseif Setting == "Keybind" then
-            Setup.Keybind = Value
-        else
-            warn("Tried to change a setting that doesn't exist or isn't available to change.")
+    function ESP.Init()
+        for Type, _ in ESPSettings do
+            if not ESP.Targets[Type] then ESP.Targets[Type] = {} end
         end
     end
 
-    function Options:SetScriptInfo(Info: { Name: string?, Icon: string? })
-        if Info.Name then
-            local titleLabel = Window:FindFirstChild("Title", true)
-            if titleLabel and titleLabel:IsA("TextLabel") then
-                titleLabel.Text = Info.Name
-            end
+    function ESP.Unload()
+        for _, Connection in ConnectionsTable do
+            Connection:Disconnect()
         end
-        if Info.Icon then
-            local iconLabel = Window:FindFirstChild("ICO", true)
-            if iconLabel and iconLabel:IsA("ImageLabel") then
-                iconLabel.Image = resolveIcon(Info.Icon)
-            end
+
+        for _, Object in ObjectsTable do
+            Object:Destroy()
         end
+
+        getgenv().Fonts = nil
     end
-
-    SetProperty(Window, { Size = Settings.Size, Visible = true, Parent = Screen });
-    Animations:Open(Window, Settings.Transparency or 0)
-
-    return Options
 end
 
-return Library
+do -- Connections
+    ESP.Init()
+
+    for _, Player in Players:GetPlayers() do
+        ESP.AddTarget(Player, "Players")
+    end
+
+    Utility.AddConnection(Players.PlayerAdded, LPH_NO_VIRTUALIZE(function(Player)
+        Player.CharacterAdded:Wait()
+
+        ESP.AddTarget(Player, "Players")
+    end))
+
+    Utility.AddConnection(Players.PlayerRemoving, LPH_NO_VIRTUALIZE(function(Player)
+        ESP.RemoveTarget(Player, "Players")
+    end))
+
+    Utility.AddConnection(RunService.PreRender, LPH_NO_VIRTUALIZE(function()
+        for Type, _ in ESP.Settings do
+            for _, Target in ESP.Targets[Type] do
+                Target.Update()
+            end
+        end
+    end))
+end
+
+-- ============================================================
+-- AIMBOT (Always aim, FOV, Smooth, Show Target Name)
+-- ============================================================
+do
+    local Aimbot = {
+        Settings = {
+            Enabled        = true,
+            FOV            = 150,      -- bán kính vòng FOV (pixel)
+            Smoothness     = 0.20,     -- 0.1 = nhanh, 0.3 = mượt hơn (vừa phải)
+            TeamCheck      = true,
+            AimPart        = "Head",   -- "Head" hoặc "HumanoidRootPart"
+            ShowTargetName = true,
+            Font           = "Tahoma", -- font đã tải trong ESP
+            FontSize       = 14,
+        },
+        CurrentTarget = nil,
+    }
+    getgenv().Aimbot = Aimbot.Settings
+
+    -- ===== GUI: Vòng FOV + Tên target =====
+    local AimbotGUI = Utility.CreateObject("ScreenGui", {
+        Name = "AimbotGUI",
+        ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets,
+        ZIndexBehavior = Enum.ZIndexBehavior.Global,
+        ResetOnSpawn = false,
+        DisplayOrder = 9999,
+        IgnoreGuiInset = true,
+        Parent = gethui(),
+    })
+
+    local FOVFrame = Utility.CreateObject("Frame", {
+        Parent = AimbotGUI,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        AnchorPoint = Vector2_new(0.5, 0.5),
+        Position = UDim2_new(0.5, 0, 0.5, 0),
+        Size = UDim2_fromOffset(Aimbot.Settings.FOV * 2, Aimbot.Settings.FOV * 2),
+    })
+    Utility.CreateObject("UICorner", { Parent = FOVFrame, CornerRadius = UDim_new(1, 0) })
+    Utility.CreateObject("UIStroke", {
+        Parent = FOVFrame,
+        Thickness = 1,
+        Color = Color3_fromRGB(255, 255, 255),
+        Transparency = 0.5,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+    })
+
+    local TargetNameLabel = Utility.CreateObject("TextLabel", {
+        Parent = AimbotGUI,
+        FontFace = Fonts.Loaded[Aimbot.Settings.Font] or Font_new(Enum.Font.SourceSans, Enum.FontWeight.Regular),
+        TextSize = Aimbot.Settings.FontSize,
+        TextColor3 = Color3_fromRGB(255, 255, 255),
+        Text = "",
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        AnchorPoint = Vector2_new(0.5, 0),
+        Position = UDim2_new(0.5, 0, 0.5, Aimbot.Settings.FOV + 10),
+        Size = UDim2_fromOffset(400, 20),
+        Visible = false,
+        TextStrokeTransparency = 0,
+        TextStrokeColor3 = Color3_fromRGB(0, 0, 0),
+    })
+
+    -- ===== Helpers =====
+    local function GetAimPart(character)
+        return character:FindFirstChild(Aimbot.Settings.AimPart)
+            or character:FindFirstChild("HumanoidRootPart")
+    end
+
+    local function GetClosestTarget()
+        local vp = Camera.ViewportSize
+        local center = Vector2_new(vp.X / 2, vp.Y / 2)
+        local closest, minDist = nil, Aimbot.Settings.FOV
+        local localPlayer = Players.LocalPlayer
+        local localTeam = localPlayer.Team
+
+        for _, player in Players:GetPlayers() do
+            local ok = player ~= localPlayer
+            if ok and Aimbot.Settings.TeamCheck then
+                ok = player.Team ~= localTeam
+            end
+            if ok then
+                local character = player.Character
+                if character then
+                    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+                    if humanoid and humanoid.Health > 0 then
+                        local aimPart = GetAimPart(character)
+                        if aimPart then
+                            local screenPos, onScreen = WorldToViewportPoint(Camera, aimPart.Position)
+                            if onScreen and screenPos.Z > 0 then
+                                local dist = (Vector2_new(screenPos.X, screenPos.Y) - center).Magnitude
+                                if dist < minDist then
+                                    minDist = dist
+                                    closest = { player = player, part = aimPart }
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        return closest
+    end
+
+    -- ===== Main loop =====
+    Utility.AddConnection(RunService.RenderStepped, LPH_NO_VIRTUALIZE(function(dt)
+        -- sync FOV size nếu user đổi settings
+        local wantedSize = UDim2_fromOffset(Aimbot.Settings.FOV * 2, Aimbot.Settings.FOV * 2)
+        if FOVFrame.Size ~= wantedSize then
+            FOVFrame.Size = wantedSize
+            TargetNameLabel.Position = UDim2_new(0.5, 0, 0.5, Aimbot.Settings.FOV + 10)
+        end
+
+        if not Aimbot.Settings.Enabled then
+            TargetNameLabel.Visible = false
+            FOVFrame.Visible = false
+            return
+        end
+        FOVFrame.Visible = true
+
+        local target = GetClosestTarget()
+        Aimbot.CurrentTarget = target
+
+        if target then
+            -- hiển thị tên target dưới vòng FOV
+            TargetNameLabel.Text = target.player.DisplayName
+            TargetNameLabel.Visible = Aimbot.Settings.ShowTargetName
+
+            -- smooth aim (frame-independent)
+            local camCF = Camera.CFrame
+            local targetCF = CFrame.lookAt(camCF.Position, target.part.Position)
+            local alpha = math_clamp(Aimbot.Settings.Smoothness * dt * 60, 0, 1)
+            Camera.CFrame = camCF:Lerp(targetCF, alpha)
+        else
+            TargetNameLabel.Visible = false
+        end
+    end))
+end
